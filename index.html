@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Sistema RA con Objetos Persistentes</title>
+    <title>Sistema RA con Marcadores Actualizables</title>
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
     <script src="https://unpkg.com/aframe-look-at-component@0.8.0/dist/aframe-look-at-component.min.js"></script>
@@ -54,6 +54,18 @@
             border-radius: 5px;
             z-index: 999;
         }
+        .update-indicator {
+            position: fixed;
+            top: 50px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            z-index: 999;
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
     </style>
 </head>
 <body style="margin: 0; overflow: hidden;">
@@ -66,8 +78,9 @@
     <!-- Información del producto -->
     <div id="productInfo" class="overlay-info"></div>
     
-    <!-- Indicador de estado -->
+    <!-- Indicadores de estado -->
     <div id="statusIndicator" class="status-indicator">Buscando marcadores...</div>
+    <div id="updateIndicator" class="update-indicator">Posición actualizada</div>
     
     <!-- Escena A-Frame -->
     <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix;" vr-mode-ui="enabled: false">
@@ -90,28 +103,13 @@
     </a-scene>
     
     <script>
-        // Configuración de las zonas del almacén
+        // Configuración de las zonas del almacén (versión reducida para simplicidad)
         const zonasAlmacen = [
-        { id: 'zona1', nombre: 'Bebidas', color: '#3498db', productos: ['agua', 'gaseosa', 'jugo', 'cerveza'] },
-            { id: 'zona2', nombre: 'Lácteos', color: '#2ecc71', productos: ['leche', 'yogur', 'queso', 'manteca'] },
-            { id: 'zona3', nombre: 'Limpieza', color: '#e74c3c', productos: ['detergente', 'jabon', 'lavandina', 'desodorante'] },
-            { id: 'zona4', nombre: 'Pastas', color: '#f39c12', productos: ['fideos', 'ravioles', 'ñoquis', 'tallarines'] },
-            { id: 'zona5', nombre: 'Enlatados', color: '#9b59b6', productos: ['atun', 'arvejas', 'choclo', 'tomate'] },
-            { id: 'zona6', nombre: 'Snacks', color: '#e67e22', productos: ['papas', 'palitos', 'mani', 'nachos'] },
-            { id: 'zona7', nombre: 'Panadería', color: '#f1c40f', productos: ['pan', 'facturas', 'galletitas', 'tostadas'] },
-            { id: 'zona8', nombre: 'Carnes', color: '#c0392b', productos: ['pollo', 'carne', 'pescado', 'cerdo'] },
-            { id: 'zona9', nombre: 'Verdulería', color: '#27ae60', productos: ['tomate', 'lechuga', 'cebolla', 'zanahoria'] },
-            { id: 'zona10', nombre: 'Congelados', color: '#3498db', productos: ['helado', 'hamburguesas', 'papas', 'verduras'] },
-            { id: 'zona11', nombre: 'Dulces', color: '#e84393', productos: ['chocolate', 'caramelos', 'alfajores', 'gomitas'] },
-            { id: 'zona12', nombre: 'Desayuno', color: '#d35400', productos: ['cereales', 'mermelada', 'cafe', 'te'] },
-            { id: 'zona13', nombre: 'Mascotas', color: '#8e44ad', productos: ['alimento perro', 'alimento gato', 'arena', 'juguetes'] },
-            { id: 'zona14', nombre: 'Bebidas Alcohólicas', color: '#7f8c8d', productos: ['vino', 'cerveza', 'gin', 'fernet'] },
-            { id: 'zona15', nombre: 'Especias', color: '#d35400', productos: ['sal', 'pimienta', 'oregano', 'aji'] },
-            { id: 'zona16', nombre: 'Aceites', color: '#f1c40f', productos: ['aceite oliva', 'aceite girasol', 'aceto', 'vinagre'] },
-            { id: 'zona17', nombre: 'Perfumería', color: '#9b59b6', productos: ['shampoo', 'jabon', 'crema', 'desodorante'] },
-            { id: 'zona18', nombre: 'Papelería', color: '#ecf0f1', productos: ['papel', 'servilletas', 'pañuelos', 'rollos'] },
-            { id: 'zona19', nombre: 'Conservas', color: '#f39c12', productos: ['pickles', 'aceitunas', 'pepinos', 'ajies'] },
-            { id: 'zona20', nombre: 'Promociones', color: '#e74c3c', productos: ['ofertas', 'descuentos', 'liquidacion'] }
+            { id: 'zona1', nombre: 'Bebidas', color: '#3498db', productos: ['agua', 'gaseosa', 'jugo', 'cerveza'], position: { x: 0, y: 0, z: 0 } },
+            { id: 'zona2', nombre: 'Lácteos', color: '#2ecc71', productos: ['leche', 'yogur', 'queso', 'manteca'], position: { x: 0, y: 0, z: 0 } },
+            { id: 'zona3', nombre: 'Limpieza', color: '#e74c3c', productos: ['detergente', 'jabon', 'lavandina', 'desodorante'], position: { x: 0, y: 0, z: 0 } },
+            { id: 'zona4', nombre: 'Pastas', color: '#f39c12', productos: ['fideos', 'ravioles', 'ñoquis', 'tallarines'], position: { x: 0, y: 0, z: 0 } },
+            { id: 'zona5', nombre: 'Enlatados', color: '#9b59b6', productos: ['atun', 'arvejas', 'choclo', 'tomate'], position: { x: 0, y: 0, z: 0 } }
         ];
         
         // Base de datos de productos
@@ -119,6 +117,9 @@
         
         // Registro de marcadores vistos y sus posiciones
         const marcadoresVistos = {};
+        
+        // Contador de actualizaciones para cada marcador
+        const contadorActualizaciones = {};
         
         // Llenar la base de datos de productos dinámicamente
         zonasAlmacen.forEach(zona => {
@@ -129,6 +130,8 @@
                     precio: `$${Math.floor(Math.random() * 900) + 100}`
                 };
             });
+            // Inicializar contador de actualizaciones
+            contadorActualizaciones[zona.id] = 0;
         });
         
         // Referencias a elementos DOM
@@ -136,6 +139,7 @@
         const productSearch = document.getElementById('productSearch');
         const productInfo = document.getElementById('productInfo');
         const statusIndicator = document.getElementById('statusIndicator');
+        const updateIndicator = document.getElementById('updateIndicator');
         const scene = document.querySelector('a-scene');
         const persistentObjects = document.getElementById('persistentObjects');
         
@@ -152,38 +156,50 @@
                 
                 // Eventos para el marcador
                 marker.addEventListener('markerFound', function() {
-                    // Actualizar indicador de estado
-                    statusIndicator.textContent = `Marcador detectado: ${zona.nombre}`;
-                    
                     // Obtener la posición mundial del marcador
-                    const markerWorldPosition = new THREE.Vector3();
-                    markerWorldPosition.setFromMatrixPosition(marker.object3D.matrixWorld);
-                    
-                    // Actualizar posición en el registro
-                    zona.position = {
-                        x: markerWorldPosition.x,
-                        y: markerWorldPosition.y,
-                        z: markerWorldPosition.z
-                    };
-                    
-                    // Registrar que hemos visto este marcador
-                    if (!marcadoresVistos[zona.id]) {
-                        marcadoresVistos[zona.id] = true;
+                    setTimeout(() => {
+                        const markerWorldPosition = new THREE.Vector3();
+                        marker.object3D.getWorldPosition(markerWorldPosition);
                         
-                        // Crear objetos persistentes para esta zona
-                        crearObjetosPersistentes(zona);
-                    } else {
-                        // Actualizar posición de los objetos persistentes
-                        actualizarPosicionObjetosPersistentes(zona);
-                    }
+                        // Actualizar posición en el registro
+                        zona.position = {
+                            x: markerWorldPosition.x,
+                            y: markerWorldPosition.y,
+                            z: markerWorldPosition.z
+                        };
+                        
+                        // Registrar que hemos visto este marcador
+                        if (!marcadoresVistos[zona.id]) {
+                            marcadoresVistos[zona.id] = true;
+                            statusIndicator.textContent = `Nuevo marcador: ${zona.nombre}`;
+                            
+                            // Crear objetos persistentes para esta zona
+                            crearObjetosPersistentes(zona);
+                        } else {
+                            // Actualizar posición de los objetos persistentes
+                            actualizarPosicionObjetosPersistentes(zona);
+                            
+                            // Incrementar contador de actualizaciones
+                            contadorActualizaciones[zona.id]++;
+                            
+                            // Mostrar notificación de actualización
+                            statusIndicator.textContent = `Marcador actualizado: ${zona.nombre}`;
+                            updateIndicator.textContent = `Posición actualizada (${contadorActualizaciones[zona.id]} veces)`;
+                            updateIndicator.style.opacity = '1';
+                            
+                            // Ocultar notificación después de 2 segundos
+                            setTimeout(() => {
+                                updateIndicator.style.opacity = '0';
+                            }, 2000);
+                        }
+                    }, 100); // Pequeño delay para asegurar que la posición se calcule correctamente
                 });
                 
                 marker.addEventListener('markerLost', function() {
-                    // No hacemos nada cuando se pierde el marcador, los objetos persistentes seguirán visibles
-                    statusIndicator.textContent = `Último marcador: ${zona.nombre} (persistente)`;
+                    // No eliminamos los objetos persistentes
                 });
                 
-                // Crear caja identificadora (será visible solo cuando el marcador esté a la vista)
+                // Crear caja identificadora (solo visible cuando el marcador está a la vista)
                 const box = document.createElement('a-box');
                 box.setAttribute('id', `${zona.id}BoxOriginal`);
                 box.setAttribute('position', '0 0.5 0');
@@ -228,6 +244,14 @@
             text.setAttribute('scale', '1.5 1.5 1.5');
             text.setAttribute('look-at', '[camera]'); // El texto siempre mira a la cámara
             
+            // Crear esfera indicadora (para mostrar actualizaciones)
+            const updateSphere = document.createElement('a-sphere');
+            updateSphere.setAttribute('id', `update${zona.id}`);
+            updateSphere.setAttribute('position', '0 2 0');
+            updateSphere.setAttribute('radius', '0.2');
+            updateSphere.setAttribute('material', 'color: yellow; opacity: 0.7');
+            updateSphere.setAttribute('visible', 'false');
+            
             // Crear flecha guía (invisible por defecto)
             const arrow = document.createElement('a-entity');
             arrow.setAttribute('id', `flecha${zona.id}`);
@@ -245,12 +269,24 @@
             arrowBody.setAttribute('height', '1');
             arrowBody.setAttribute('radius', '0.05');
             
+            // Contador de actualizaciones como texto 3D
+            const updateCounter = document.createElement('a-text');
+            updateCounter.setAttribute('id', `counter${zona.id}`);
+            updateCounter.setAttribute('value', '0');
+            updateCounter.setAttribute('position', '0.5 0.5 0');
+            updateCounter.setAttribute('align', 'center');
+            updateCounter.setAttribute('color', 'white');
+            updateCounter.setAttribute('scale', '0.5 0.5 0.5');
+            updateCounter.setAttribute('visible', 'false');
+            
             // Agregar elementos al contenedor
             arrow.appendChild(arrowHead);
             arrow.appendChild(arrowBody);
             box.appendChild(text);
             zonaContainer.appendChild(box);
             zonaContainer.appendChild(arrow);
+            zonaContainer.appendChild(updateSphere);
+            zonaContainer.appendChild(updateCounter);
             
             // Agregar el contenedor a la entidad de objetos persistentes
             persistentObjects.appendChild(zonaContainer);
@@ -259,8 +295,37 @@
         // Función para actualizar la posición de los objetos persistentes
         function actualizarPosicionObjetosPersistentes(zona) {
             const persistentEntity = document.getElementById(`${zona.id}Persistent`);
+            const updateSphere = document.getElementById(`update${zona.id}`);
+            const updateCounter = document.getElementById(`counter${zona.id}`);
+            
             if (persistentEntity) {
+                // Actualizar posición
                 persistentEntity.setAttribute('position', `${zona.position.x} ${zona.position.y} ${zona.position.z}`);
+                
+                // Mostrar efecto visual de actualización
+                if (updateSphere) {
+                    updateSphere.setAttribute('visible', 'true');
+                    updateSphere.setAttribute('animation', 'property: scale; from: 0.1 0.1 0.1; to: 1 1 1; dur: 1000; easing: easeOutElastic');
+                    updateSphere.setAttribute('animation__opacity', 'property: material.opacity; from: 1; to: 0; dur: 1000');
+                    
+                    // Ocultar después de la animación
+                    setTimeout(() => {
+                        updateSphere.setAttribute('visible', 'false');
+                        updateSphere.removeAttribute('animation');
+                        updateSphere.removeAttribute('animation__opacity');
+                    }, 1000);
+                }
+                
+                // Actualizar contador visible
+                if (updateCounter) {
+                    updateCounter.setAttribute('value', contadorActualizaciones[zona.id].toString());
+                    updateCounter.setAttribute('visible', 'true');
+                    
+                    // Ocultar después de 3 segundos
+                    setTimeout(() => {
+                        updateCounter.setAttribute('visible', 'false');
+                    }, 3000);
+                }
             }
         }
         
