@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Sistema RA con Múltiples Marcadores</title>
+    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+    <style>
+        .search-container {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            right: 10px;
+            z-index: 999;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+            border-radius: 5px;
+            display: flex;
+        }
+        #productSearch {
+            width: 80%;
+            padding: 8px;
+            border-radius: 4px;
+            border: none;
+        }
+        #searchBtn {
+            width: 20%;
+            padding: 8px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            margin-left: 5px;
+        }
+        .overlay-info {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            display: none;
+            z-index: 999;
+        }
+        .distance-indicator {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            z-index: 999;
+        }
+    </style>
+</head>
+<body style="margin: 0; overflow: hidden;">
+    <!-- Interface de búsqueda -->
+    <div class="search-container">
+        <input type="text" id="productSearch" placeholder="Buscar producto...">
+        <button id="searchBtn">Buscar</button>
+    </div>
+    
+    <!-- Información del producto -->
+    <div id="productInfo" class="overlay-info"></div>
+    
+    <!-- Indicador de distancia -->
+    <div id="distanceIndicator" class="distance-indicator">Buscando marcadores...</div>
+    
+    <!-- Escena A-Frame -->
+    <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;" vr-mode-ui="enabled: false">
+        
+        <!-- Los marcadores se generarán dinámicamente mediante JavaScript -->
+        
+        <a-entity camera></a-entity>
+    </a-scene>
+    
+    <script>
+        // Configuración de las zonas del almacén y sus marcadores
+        const zonasAlmacen = [
+            { id: 'zona1', nombre: 'Bebidas', color: '#3498db', productos: ['agua', 'gaseosa', 'jugo', 'cerveza'] },
+            { id: 'zona2', nombre: 'Lácteos', color: '#2ecc71', productos: ['leche', 'yogur', 'queso', 'manteca'] },
+            { id: 'zona3', nombre: 'Limpieza', color: '#e74c3c', productos: ['detergente', 'jabon', 'lavandina', 'desodorante'] },
+            { id: 'zona4', nombre: 'Pastas', color: '#f39c12', productos: ['fideos', 'ravioles', 'ñoquis', 'tallarines'] },
+            { id: 'zona5', nombre: 'Enlatados', color: '#9b59b6', productos: ['atun', 'arvejas', 'choclo', 'tomate'] },
+            { id: 'zona6', nombre: 'Snacks', color: '#e67e22', productos: ['papas', 'palitos', 'mani', 'nachos'] },
+            { id: 'zona7', nombre: 'Panadería', color: '#f1c40f', productos: ['pan', 'facturas', 'galletitas', 'tostadas'] },
+            { id: 'zona8', nombre: 'Carnes', color: '#c0392b', productos: ['pollo', 'carne', 'pescado', 'cerdo'] },
+            { id: 'zona9', nombre: 'Verdulería', color: '#27ae60', productos: ['tomate', 'lechuga', 'cebolla', 'zanahoria'] },
+            { id: 'zona10', nombre: 'Congelados', color: '#3498db', productos: ['helado', 'hamburguesas', 'papas', 'verduras'] },
+            { id: 'zona11', nombre: 'Dulces', color: '#e84393', productos: ['chocolate', 'caramelos', 'alfajores', 'gomitas'] },
+            { id: 'zona12', nombre: 'Desayuno', color: '#d35400', productos: ['cereales', 'mermelada', 'cafe', 'te'] },
+            { id: 'zona13', nombre: 'Mascotas', color: '#8e44ad', productos: ['alimento perro', 'alimento gato', 'arena', 'juguetes'] },
+            { id: 'zona14', nombre: 'Bebidas Alcohólicas', color: '#7f8c8d', productos: ['vino', 'cerveza', 'gin', 'fernet'] },
+            { id: 'zona15', nombre: 'Especias', color: '#d35400', productos: ['sal', 'pimienta', 'oregano', 'aji'] },
+            { id: 'zona16', nombre: 'Aceites', color: '#f1c40f', productos: ['aceite oliva', 'aceite girasol', 'aceto', 'vinagre'] },
+            { id: 'zona17', nombre: 'Perfumería', color: '#9b59b6', productos: ['shampoo', 'jabon', 'crema', 'desodorante'] },
+            { id: 'zona18', nombre: 'Papelería', color: '#ecf0f1', productos: ['papel', 'servilletas', 'pañuelos', 'rollos'] },
+            { id: 'zona19', nombre: 'Conservas', color: '#f39c12', productos: ['pickles', 'aceitunas', 'pepinos', 'ajies'] },
+            { id: 'zona20', nombre: 'Promociones', color: '#e74c3c', productos: ['ofertas', 'descuentos', 'liquidacion'] }
+        ];
+        
+        // Base de datos de productos con precios y descripciones
+        const productosDB = {};
+        
+        // Llenar la base de datos de productos dinámicamente
+        zonasAlmacen.forEach(zona => {
+            zona.productos.forEach(producto => {
+                productosDB[producto] = {
+                    seccion: zona.id,
+                    descripcion: `${producto.charAt(0).toUpperCase() + producto.slice(1)}`,
+                    precio: `$${Math.floor(Math.random() * 900) + 100}`
+                };
+            });
+        });
+        
+        // Referencias a elementos DOM
+        const searchBtn = document.getElementById('searchBtn');
+        const productSearch = document.getElementById('productSearch');
+        const productInfo = document.getElementById('productInfo');
+        const distanceIndicator = document.getElementById('distanceIndicator');
+        const scene = document.querySelector('a-scene');
+        
+        // Función para crear dinámicamente los marcadores en la escena
+        function crearMarcadores() {
+            zonasAlmacen.forEach(zona => {
+                // Crear elemento marcador
+                const marker = document.createElement('a-marker');
+                marker.setAttribute('id', `${zona.id}Marker`);
+                marker.setAttribute('type', 'pattern');
+                marker.setAttribute('url', `markers/${zona.id}.patt`); // Asume que tienes los archivos .patt creados
+                marker.setAttribute('emitevents', 'true');
+                marker.addEventListener('markerFound', () => {
+                    distanceIndicator.textContent = `Marcador detectado: ${zona.nombre}`;
+                    // Cuando se encuentra un marcador, resetea el estado de los demás
+                    resetearEstadoMarcadores();
+                });
+                
+                // Crear caja identificadora
+                const box = document.createElement('a-box');
+                box.setAttribute('id', `${zona.id}Box`);
+                box.setAttribute('position', '0 0.5 0');
+                box.setAttribute('material', `color: ${zona.color}; opacity: 0.7`);
+                box.setAttribute('scale', '1 1 1');
+                
+                // Crear texto para la caja
+                const text = document.createElement('a-text');
+                text.setAttribute('value', zona.nombre);
+                text.setAttribute('position', '0 1.2 0');
+                text.setAttribute('align', 'center');
+                text.setAttribute('color', '#FFF');
+                text.setAttribute('scale', '1.5 1.5 1.5');
+                
+                // Crear flecha guía (invisible por defecto)
+                const arrow = document.createElement('a-entity');
+                arrow.setAttribute('id', `flecha${zona.id}`);
+                arrow.setAttribute('position', '0 1.5 0');
+                arrow.setAttribute('visible', 'false');
+                
+                const arrowHead = document.createElement('a-triangle');
+                arrowHead.setAttribute('color', 'yellow');
+                arrowHead.setAttribute('rotation', '0 0 180');
+                arrowHead.setAttribute('scale', '0.5 0.5 0.5');
+                
+                const arrowBody = document.createElement('a-cylinder');
+                arrowBody.setAttribute('color', 'yellow');
+                arrowBody.setAttribute('position', '0 0.5 0');
+                arrowBody.setAttribute('height', '1');
+                arrowBody.setAttribute('radius', '0.05');
+                
+                // Agregar elementos a la escena
+                arrow.appendChild(arrowHead);
+                arrow.appendChild(arrowBody);
+                box.appendChild(text);
+                marker.appendChild(box);
+                marker.appendChild(arrow);
+                scene.appendChild(marker);
+            });
+        }
+        
+        // Resetear el estado visual de todos los marcadores
+        function resetearEstadoMarcadores() {
+            zonasAlmacen.forEach(zona => {
+                const box = document.getElementById(`${zona.id}Box`);
+                const arrow = document.getElementById(`flecha${zona.id}`);
+                
+                if (box) {
+                    box.setAttribute('material', `color: ${zona.color}; opacity: 0.7`);
+                    box.removeAttribute('animation');
+                }
+                
+                if (arrow) {
+                    arrow.setAttribute('visible', 'false');
+                }
+            });
+        }
+        
+        // Función para buscar productos
+        function buscarProducto() {
+            const searchTerm = productSearch.value.toLowerCase().trim();
+            
+            // Resetear todas las flechas y estilos
+            resetearEstadoMarcadores();
+            
+            if (searchTerm === '') {
+                productInfo.style.display = 'none';
+                return;
+            }
+            
+            // Buscar el producto
+            const producto = productosDB[searchTerm];
+            
+            if (producto) {
+                // Mostrar información del producto
+                productInfo.innerHTML = `
+                    <h3>${searchTerm.toUpperCase()}</h3>
+                    <p>${producto.descripcion}</p>
+                    <p>Precio: ${producto.precio}</p>
+                    <p>Sección: ${zonasAlmacen.find(z => z.id === producto.seccion).nombre}</p>
+                `;
+                productInfo.style.display = 'block';
+                
+                // Activar flecha y destacar la sección correspondiente
+                const seccionId = producto.seccion;
+                const box = document.getElementById(`${seccionId}Box`);
+                const arrow = document.getElementById(`flecha${seccionId}`);
+                const zona = zonasAlmacen.find(z => z.id === seccionId);
+                
+                if (box && arrow && zona) {
+                    arrow.setAttribute('visible', 'true');
+                    box.setAttribute('material', `color: ${zona.color}; opacity: 1; emissive: ${zona.color}`);
+                    box.setAttribute('animation', 'property: scale; to: 1.2 1.2 1.2; dur: 1000; easing: easeInOutQuad; loop: true');
+                }
+            } else {
+                productInfo.innerHTML = `<p>Producto "${searchTerm}" no encontrado</p>`;
+                productInfo.style.display = 'block';
+            }
+        }
+        
+        // Inicialización
+        window.addEventListener('load', () => {
+            crearMarcadores();
+            
+            // Configurar eventos de búsqueda
+            searchBtn.addEventListener('click', buscarProducto);
+            productSearch.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    buscarProducto();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
