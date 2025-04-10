@@ -2,9 +2,10 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Sistema RA con Múltiples Marcadores</title>
+    <title>Sistema RA con Objetos Persistentes</title>
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+    <script src="https://unpkg.com/aframe-look-at-component@0.8.0/dist/aframe-look-at-component.min.js"></script>
     <style>
         .search-container {
             position: fixed;
@@ -43,7 +44,7 @@
             display: none;
             z-index: 999;
         }
-        .distance-indicator {
+        .status-indicator {
             position: fixed;
             top: 10px;
             right: 10px;
@@ -65,21 +66,33 @@
     <!-- Información del producto -->
     <div id="productInfo" class="overlay-info"></div>
     
-    <!-- Indicador de distancia -->
-    <div id="distanceIndicator" class="distance-indicator">Buscando marcadores...</div>
+    <!-- Indicador de estado -->
+    <div id="statusIndicator" class="status-indicator">Buscando marcadores...</div>
     
     <!-- Escena A-Frame -->
-    <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;" vr-mode-ui="enabled: false">
+    <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix;" vr-mode-ui="enabled: false">
+        <a-assets>
+            <!-- Precargar modelos o texturas si es necesario -->
+        </a-assets>
+        
+        <!-- Entidad para almacenar objetos persistentes -->
+        <a-entity id="persistentObjects"></a-entity>
         
         <!-- Los marcadores se generarán dinámicamente mediante JavaScript -->
         
-        <a-entity camera></a-entity>
+        <!-- Cámara con cursor para interacción -->
+        <a-entity camera look-controls>
+            <a-entity cursor="fuse: false; rayOrigin: mouse;"
+                      position="0 0 -1"
+                      geometry="primitive: ring; radiusInner: 0.02; radiusOuter: 0.03"
+                      material="color: white; shader: flat"></a-entity>
+        </a-entity>
     </a-scene>
     
     <script>
-        // Configuración de las zonas del almacén y sus marcadores
+        // Configuración de las zonas del almacén
         const zonasAlmacen = [
-            { id: 'zona1', nombre: 'Bebidas', color: '#3498db', productos: ['agua', 'gaseosa', 'jugo', 'cerveza'] },
+        { id: 'zona1', nombre: 'Bebidas', color: '#3498db', productos: ['agua', 'gaseosa', 'jugo', 'cerveza'] },
             { id: 'zona2', nombre: 'Lácteos', color: '#2ecc71', productos: ['leche', 'yogur', 'queso', 'manteca'] },
             { id: 'zona3', nombre: 'Limpieza', color: '#e74c3c', productos: ['detergente', 'jabon', 'lavandina', 'desodorante'] },
             { id: 'zona4', nombre: 'Pastas', color: '#f39c12', productos: ['fideos', 'ravioles', 'ñoquis', 'tallarines'] },
@@ -101,8 +114,11 @@
             { id: 'zona20', nombre: 'Promociones', color: '#e74c3c', productos: ['ofertas', 'descuentos', 'liquidacion'] }
         ];
         
-        // Base de datos de productos con precios y descripciones
+        // Base de datos de productos
         const productosDB = {};
+        
+        // Registro de marcadores vistos y sus posiciones
+        const marcadoresVistos = {};
         
         // Llenar la base de datos de productos dinámicamente
         zonasAlmacen.forEach(zona => {
@@ -119,8 +135,9 @@
         const searchBtn = document.getElementById('searchBtn');
         const productSearch = document.getElementById('productSearch');
         const productInfo = document.getElementById('productInfo');
-        const distanceIndicator = document.getElementById('distanceIndicator');
+        const statusIndicator = document.getElementById('statusIndicator');
         const scene = document.querySelector('a-scene');
+        const persistentObjects = document.getElementById('persistentObjects');
         
         // Función para crear dinámicamente los marcadores en la escena
         function crearMarcadores() {
@@ -129,17 +146,46 @@
                 const marker = document.createElement('a-marker');
                 marker.setAttribute('id', `${zona.id}Marker`);
                 marker.setAttribute('type', 'pattern');
-                marker.setAttribute('url', `${zona.id}.patt`); // Asume que tienes los archivos .patt creados
+                marker.setAttribute('url', `markers/${zona.id}.patt`);
                 marker.setAttribute('emitevents', 'true');
-                marker.addEventListener('markerFound', () => {
-                    distanceIndicator.textContent = `Marcador detectado: ${zona.nombre}`;
-                    // Cuando se encuentra un marcador, resetea el estado de los demás
-                    resetearEstadoMarcadores();
+                marker.setAttribute('registerevents', 'true');
+                
+                // Eventos para el marcador
+                marker.addEventListener('markerFound', function() {
+                    // Actualizar indicador de estado
+                    statusIndicator.textContent = `Marcador detectado: ${zona.nombre}`;
+                    
+                    // Obtener la posición mundial del marcador
+                    const markerWorldPosition = new THREE.Vector3();
+                    markerWorldPosition.setFromMatrixPosition(marker.object3D.matrixWorld);
+                    
+                    // Actualizar posición en el registro
+                    zona.position = {
+                        x: markerWorldPosition.x,
+                        y: markerWorldPosition.y,
+                        z: markerWorldPosition.z
+                    };
+                    
+                    // Registrar que hemos visto este marcador
+                    if (!marcadoresVistos[zona.id]) {
+                        marcadoresVistos[zona.id] = true;
+                        
+                        // Crear objetos persistentes para esta zona
+                        crearObjetosPersistentes(zona);
+                    } else {
+                        // Actualizar posición de los objetos persistentes
+                        actualizarPosicionObjetosPersistentes(zona);
+                    }
                 });
                 
-                // Crear caja identificadora
+                marker.addEventListener('markerLost', function() {
+                    // No hacemos nada cuando se pierde el marcador, los objetos persistentes seguirán visibles
+                    statusIndicator.textContent = `Último marcador: ${zona.nombre} (persistente)`;
+                });
+                
+                // Crear caja identificadora (será visible solo cuando el marcador esté a la vista)
                 const box = document.createElement('a-box');
-                box.setAttribute('id', `${zona.id}Box`);
+                box.setAttribute('id', `${zona.id}BoxOriginal`);
                 box.setAttribute('position', '0 0.5 0');
                 box.setAttribute('material', `color: ${zona.color}; opacity: 0.7`);
                 box.setAttribute('scale', '1 1 1');
@@ -152,34 +198,73 @@
                 text.setAttribute('color', '#FFF');
                 text.setAttribute('scale', '1.5 1.5 1.5');
                 
-                // Crear flecha guía (invisible por defecto)
-                const arrow = document.createElement('a-entity');
-                arrow.setAttribute('id', `flecha${zona.id}`);
-                arrow.setAttribute('position', '0 1.5 0');
-                arrow.setAttribute('visible', 'false');
-                
-                const arrowHead = document.createElement('a-triangle');
-                arrowHead.setAttribute('color', 'yellow');
-                arrowHead.setAttribute('rotation', '0 0 180');
-                arrowHead.setAttribute('scale', '0.5 0.5 0.5');
-                
-                const arrowBody = document.createElement('a-cylinder');
-                arrowBody.setAttribute('color', 'yellow');
-                arrowBody.setAttribute('position', '0 0.5 0');
-                arrowBody.setAttribute('height', '1');
-                arrowBody.setAttribute('radius', '0.05');
-                
-                // Agregar elementos a la escena
-                arrow.appendChild(arrowHead);
-                arrow.appendChild(arrowBody);
+                // Agregar elementos al marcador
                 box.appendChild(text);
                 marker.appendChild(box);
-                marker.appendChild(arrow);
                 scene.appendChild(marker);
             });
         }
         
-        // Resetear el estado visual de todos los marcadores
+        // Función para crear objetos persistentes para una zona
+        function crearObjetosPersistentes(zona) {
+            // Crear un contenedor para los objetos de esta zona
+            const zonaContainer = document.createElement('a-entity');
+            zonaContainer.setAttribute('id', `${zona.id}Persistent`);
+            zonaContainer.setAttribute('position', `${zona.position.x} ${zona.position.y} ${zona.position.z}`);
+            
+            // Crear caja persistente
+            const box = document.createElement('a-box');
+            box.setAttribute('id', `${zona.id}Box`);
+            box.setAttribute('position', '0 0.5 0');
+            box.setAttribute('material', `color: ${zona.color}; opacity: 0.7`);
+            box.setAttribute('scale', '1 1 1');
+            
+            // Crear texto para la caja
+            const text = document.createElement('a-text');
+            text.setAttribute('value', zona.nombre);
+            text.setAttribute('position', '0 1.2 0');
+            text.setAttribute('align', 'center');
+            text.setAttribute('color', '#FFF');
+            text.setAttribute('scale', '1.5 1.5 1.5');
+            text.setAttribute('look-at', '[camera]'); // El texto siempre mira a la cámara
+            
+            // Crear flecha guía (invisible por defecto)
+            const arrow = document.createElement('a-entity');
+            arrow.setAttribute('id', `flecha${zona.id}`);
+            arrow.setAttribute('position', '0 1.5 0');
+            arrow.setAttribute('visible', 'false');
+            
+            const arrowHead = document.createElement('a-triangle');
+            arrowHead.setAttribute('color', 'yellow');
+            arrowHead.setAttribute('rotation', '0 0 180');
+            arrowHead.setAttribute('scale', '0.5 0.5 0.5');
+            
+            const arrowBody = document.createElement('a-cylinder');
+            arrowBody.setAttribute('color', 'yellow');
+            arrowBody.setAttribute('position', '0 0.5 0');
+            arrowBody.setAttribute('height', '1');
+            arrowBody.setAttribute('radius', '0.05');
+            
+            // Agregar elementos al contenedor
+            arrow.appendChild(arrowHead);
+            arrow.appendChild(arrowBody);
+            box.appendChild(text);
+            zonaContainer.appendChild(box);
+            zonaContainer.appendChild(arrow);
+            
+            // Agregar el contenedor a la entidad de objetos persistentes
+            persistentObjects.appendChild(zonaContainer);
+        }
+        
+        // Función para actualizar la posición de los objetos persistentes
+        function actualizarPosicionObjetosPersistentes(zona) {
+            const persistentEntity = document.getElementById(`${zona.id}Persistent`);
+            if (persistentEntity) {
+                persistentEntity.setAttribute('position', `${zona.position.x} ${zona.position.y} ${zona.position.z}`);
+            }
+        }
+        
+        // Resetear el estado visual de todos los marcadores (solo estilo, no visibilidad)
         function resetearEstadoMarcadores() {
             zonasAlmacen.forEach(zona => {
                 const box = document.getElementById(`${zona.id}Box`);
@@ -231,10 +316,18 @@
                     arrow.setAttribute('visible', 'true');
                     box.setAttribute('material', `color: ${zona.color}; opacity: 1; emissive: ${zona.color}`);
                     box.setAttribute('animation', 'property: scale; to: 1.2 1.2 1.2; dur: 1000; easing: easeInOutQuad; loop: true');
+                    
+                    // Si el marcador ha sido visto, mostramos dirección hacia él
+                    if (marcadoresVistos[seccionId]) {
+                        statusIndicator.textContent = `Producto encontrado en: ${zona.nombre}`;
+                    } else {
+                        statusIndicator.textContent = `Busca el marcador de: ${zona.nombre}`;
+                    }
                 }
             } else {
                 productInfo.innerHTML = `<p>Producto "${searchTerm}" no encontrado</p>`;
                 productInfo.style.display = 'block';
+                statusIndicator.textContent = 'Producto no encontrado';
             }
         }
         
