@@ -2,412 +2,86 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Sistema RA con Marcadores Actualizables</title>
-    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
-    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
-    <script src="https://unpkg.com/aframe-look-at-component@0.8.0/dist/aframe-look-at-component.min.js"></script>
-    <style>
-        .search-container {
-            position: fixed;
-            bottom: 10px;
-            left: 10px;
-            right: 10px;
-            z-index: 999;
-            background: rgba(0, 0, 0, 0.7);
-            padding: 10px;
-            border-radius: 5px;
-            display: flex;
-        }
-        #productSearch {
-            width: 80%;
-            padding: 8px;
-            border-radius: 4px;
-            border: none;
-        }
-        #searchBtn {
-            width: 20%;
-            padding: 8px;
-            background: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            margin-left: 5px;
-        }
-        .overlay-info {
-            position: fixed;
-            top: 10px;
-            left: 10px;
-            background: rgba(0, 0, 0, 0.7);
-            color: white;
-            padding: 10px;
-            border-radius: 5px;
-            display: none;
-            z-index: 999;
-        }
-        .status-indicator {
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            background: rgba(0, 0, 0, 0.7);
-            color: white;
-            padding: 10px;
-            border-radius: 5px;
-            z-index: 999;
-        }
-        .update-indicator {
-            position: fixed;
-            top: 50px;
-            right: 10px;
-            background: rgba(0, 0, 0, 0.7);
-            color: white;
-            padding: 10px;
-            border-radius: 5px;
-            z-index: 999;
-            opacity: 0;
-            transition: opacity 0.5s;
-        }
-    </style>
-</head>
-<body style="margin: 0; overflow: hidden;">
-    <!-- Interface de búsqueda -->
-    <div class="search-container">
-        <input type="text" id="productSearch" placeholder="Buscar producto...">
-        <button id="searchBtn">Buscar</button>
-    </div>
-    
-    <!-- Información del producto -->
-    <div id="productInfo" class="overlay-info"></div>
-    
-    <!-- Indicadores de estado -->
-    <div id="statusIndicator" class="status-indicator">Buscando marcadores...</div>
-    <div id="updateIndicator" class="update-indicator">Posición actualizada</div>
-    
-    <!-- Escena A-Frame -->
-    <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix;" vr-mode-ui="enabled: false">
-        <a-assets>
-            <!-- Precargar modelos o texturas si es necesario -->
-        </a-assets>
-        
-        <!-- Entidad para almacenar objetos persistentes -->
-        <a-entity id="persistentObjects"></a-entity>
-        
-        <!-- Los marcadores se generarán dinámicamente mediante JavaScript -->
-        
-        <!-- Cámara con cursor para interacción -->
-        <a-entity camera look-controls>
-            <a-entity cursor="fuse: false; rayOrigin: mouse;"
-                      position="0 0 -1"
-                      geometry="primitive: ring; radiusInner: 0.02; radiusOuter: 0.03"
-                      material="color: white; shader: flat"></a-entity>
-        </a-entity>
-    </a-scene>
-    
+    <title>Cubos activados por QR</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/aframe/1.3.0/aframe.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/AR.js/2.2.2/aframe-ar.js"></script>
     <script>
-        // Configuración de las zonas del almacén (versión reducida para simplicidad)
-        const zonasAlmacen = [
-            { id: 'zona1', nombre: 'Bebidas', color: '#3498db', productos: ['agua', 'gaseosa', 'jugo', 'cerveza'], position: { x: 0, y: 0, z: 0 } },
-            { id: 'zona2', nombre: 'Lácteos', color: '#2ecc71', productos: ['leche', 'yogur', 'queso', 'manteca'], position: { x: 0, y: 0, z: 0 } },
-            { id: 'zona3', nombre: 'Limpieza', color: '#e74c3c', productos: ['detergente', 'jabon', 'lavandina', 'desodorante'], position: { x: 0, y: 0, z: 0 } },
-            { id: 'zona4', nombre: 'Pastas', color: '#f39c12', productos: ['fideos', 'ravioles', 'ñoquis', 'tallarines'], position: { x: 0, y: 0, z: 0 } },
-            { id: 'zona5', nombre: 'Enlatados', color: '#9b59b6', productos: ['atun', 'arvejas', 'choclo', 'tomate'], position: { x: 0, y: 0, z: 0 } }
-        ];
-        
-        // Base de datos de productos
-        const productosDB = {};
-        
-        // Registro de marcadores vistos y sus posiciones
-        const marcadoresVistos = {};
-        
-        // Contador de actualizaciones para cada marcador
-        const contadorActualizaciones = {};
-        
-        // Llenar la base de datos de productos dinámicamente
-        zonasAlmacen.forEach(zona => {
-            zona.productos.forEach(producto => {
-                productosDB[producto] = {
-                    seccion: zona.id,
-                    descripcion: `${producto.charAt(0).toUpperCase() + producto.slice(1)}`,
-                    precio: `$${Math.floor(Math.random() * 900) + 100}`
-                };
-            });
-            // Inicializar contador de actualizaciones
-            contadorActualizaciones[zona.id] = 0;
-        });
-        
-        // Referencias a elementos DOM
-        const searchBtn = document.getElementById('searchBtn');
-        const productSearch = document.getElementById('productSearch');
-        const productInfo = document.getElementById('productInfo');
-        const statusIndicator = document.getElementById('statusIndicator');
-        const updateIndicator = document.getElementById('updateIndicator');
-        const scene = document.querySelector('a-scene');
-        const persistentObjects = document.getElementById('persistentObjects');
-        
-        // Función para crear dinámicamente los marcadores en la escena
-        function crearMarcadores() {
-            zonasAlmacen.forEach(zona => {
-                // Crear elemento marcador
-                const marker = document.createElement('a-marker');
-                marker.setAttribute('id', `${zona.id}Marker`);
-                marker.setAttribute('type', 'pattern');
-                marker.setAttribute('url', `${zona.id}.patt`);
-                marker.setAttribute('emitevents', 'true');
-                marker.setAttribute('registerevents', 'true');
+        // Componente personalizado para manejar la visibilidad de los cubos
+        AFRAME.registerComponent('qr-detector', {
+            init: function () {
+                // Obtener referencias a los cubos
+                this.cubo1 = document.querySelector('#cubo1');
+                this.cubo2 = document.querySelector('#cubo2');
+                this.cubo3 = document.querySelector('#cubo3');
                 
-                // Eventos para el marcador
-                marker.addEventListener('markerFound', function() {
-                    // Obtener la posición mundial del marcador
-                    setTimeout(() => {
-                        const markerWorldPosition = new THREE.Vector3();
-                        marker.object3D.getWorldPosition(markerWorldPosition);
-                        
-                        // Actualizar posición en el registro
-                        zona.position = {
-                            x: markerWorldPosition.x,
-                            y: markerWorldPosition.y,
-                            z: markerWorldPosition.z
-                        };
-                        
-                        // Registrar que hemos visto este marcador
-                        if (!marcadoresVistos[zona.id]) {
-                            marcadoresVistos[zona.id] = true;
-                            statusIndicator.textContent = `Nuevo marcador: ${zona.nombre}`;
-                            
-                            // Crear objetos persistentes para esta zona
-                            crearObjetosPersistentes(zona);
-                        } else {
-                            // Actualizar posición de los objetos persistentes
-                            actualizarPosicionObjetosPersistentes(zona);
-                            
-                            // Incrementar contador de actualizaciones
-                            contadorActualizaciones[zona.id]++;
-                            
-                            // Mostrar notificación de actualización
-                            statusIndicator.textContent = `Marcador actualizado: ${zona.nombre}`;
-                            updateIndicator.textContent = `Posición actualizada (${contadorActualizaciones[zona.id]} veces)`;
-                            updateIndicator.style.opacity = '1';
-                            
-                            // Ocultar notificación después de 2 segundos
-                            setTimeout(() => {
-                                updateIndicator.style.opacity = '0';
-                            }, 2000);
-                        }
-                    }, 100); // Pequeño delay para asegurar que la posición se calcule correctamente
+                // Inicializar todos los cubos como invisibles
+                this.cubo1.setAttribute('scale', '0 0 0');
+                this.cubo2.setAttribute('scale', '0 0 0');
+                this.cubo3.setAttribute('scale', '0 0 0');
+                
+                // Configurar eventos para cada marcador
+                let marker1 = document.querySelector('#marker1');
+                let marker2 = document.querySelector('#marker2');
+                let marker3 = document.querySelector('#marker3');
+                
+                // Eventos para el marcador 1
+                marker1.addEventListener('markerFound', () => {
+                    this.cubo1.setAttribute('scale', '1 1 1');
+                    console.log('Marcador 1 encontrado, mostrando cubo 1');
                 });
                 
-                marker.addEventListener('markerLost', function() {
-                    // No eliminamos los objetos persistentes
+                marker1.addEventListener('markerLost', () => {
+                    this.cubo1.setAttribute('scale', '0 0 0');
+                    console.log('Marcador 1 perdido, ocultando cubo 1');
                 });
                 
-                // Crear caja identificadora (solo visible cuando el marcador está a la vista)
-                const box = document.createElement('a-box');
-                box.setAttribute('id', `${zona.id}BoxOriginal`);
-                box.setAttribute('position', '0 0.5 0');
-                box.setAttribute('material', `color: ${zona.color}; opacity: 0.7`);
-                box.setAttribute('scale', '1 1 1');
+                // Eventos para el marcador 2
+                marker2.addEventListener('markerFound', () => {
+                    this.cubo2.setAttribute('scale', '1 1 1');
+                    console.log('Marcador 2 encontrado, mostrando cubo 2');
+                });
                 
-                // Crear texto para la caja
-                const text = document.createElement('a-text');
-                text.setAttribute('value', zona.nombre);
-                text.setAttribute('position', '0 1.2 0');
-                text.setAttribute('align', 'center');
-                text.setAttribute('color', '#FFF');
-                text.setAttribute('scale', '1.5 1.5 1.5');
+                marker2.addEventListener('markerLost', () => {
+                    this.cubo2.setAttribute('scale', '0 0 0');
+                    console.log('Marcador 2 perdido, ocultando cubo 2');
+                });
                 
-                // Agregar elementos al marcador
-                box.appendChild(text);
-                marker.appendChild(box);
-                scene.appendChild(marker);
-            });
-        }
-        
-        // Función para crear objetos persistentes para una zona
-        function crearObjetosPersistentes(zona) {
-            // Crear un contenedor para los objetos de esta zona
-            const zonaContainer = document.createElement('a-entity');
-            zonaContainer.setAttribute('id', `${zona.id}Persistent`);
-            zonaContainer.setAttribute('position', `${zona.position.x} ${zona.position.y} ${zona.position.z}`);
-            
-            // Crear caja persistente
-            const box = document.createElement('a-box');
-            box.setAttribute('id', `${zona.id}Box`);
-            box.setAttribute('position', '0 0.5 0');
-            box.setAttribute('material', `color: ${zona.color}; opacity: 0.7`);
-            box.setAttribute('scale', '1 1 1');
-            
-            // Crear texto para la caja
-            const text = document.createElement('a-text');
-            text.setAttribute('value', zona.nombre);
-            text.setAttribute('position', '0 1.2 0');
-            text.setAttribute('align', 'center');
-            text.setAttribute('color', '#FFF');
-            text.setAttribute('scale', '1.5 1.5 1.5');
-            text.setAttribute('look-at', '[camera]'); // El texto siempre mira a la cámara
-            
-            // Crear esfera indicadora (para mostrar actualizaciones)
-            const updateSphere = document.createElement('a-sphere');
-            updateSphere.setAttribute('id', `update${zona.id}`);
-            updateSphere.setAttribute('position', '0 2 0');
-            updateSphere.setAttribute('radius', '0.2');
-            updateSphere.setAttribute('material', 'color: yellow; opacity: 0.7');
-            updateSphere.setAttribute('visible', 'false');
-            
-            // Crear flecha guía (invisible por defecto)
-            const arrow = document.createElement('a-entity');
-            arrow.setAttribute('id', `flecha${zona.id}`);
-            arrow.setAttribute('position', '0 1.5 0');
-            arrow.setAttribute('visible', 'false');
-            
-            const arrowHead = document.createElement('a-triangle');
-            arrowHead.setAttribute('color', 'yellow');
-            arrowHead.setAttribute('rotation', '0 0 180');
-            arrowHead.setAttribute('scale', '0.5 0.5 0.5');
-            
-            const arrowBody = document.createElement('a-cylinder');
-            arrowBody.setAttribute('color', 'yellow');
-            arrowBody.setAttribute('position', '0 0.5 0');
-            arrowBody.setAttribute('height', '1');
-            arrowBody.setAttribute('radius', '0.05');
-            
-            // Contador de actualizaciones como texto 3D
-            const updateCounter = document.createElement('a-text');
-            updateCounter.setAttribute('id', `counter${zona.id}`);
-            updateCounter.setAttribute('value', '0');
-            updateCounter.setAttribute('position', '0.5 0.5 0');
-            updateCounter.setAttribute('align', 'center');
-            updateCounter.setAttribute('color', 'white');
-            updateCounter.setAttribute('scale', '0.5 0.5 0.5');
-            updateCounter.setAttribute('visible', 'false');
-            
-            // Agregar elementos al contenedor
-            arrow.appendChild(arrowHead);
-            arrow.appendChild(arrowBody);
-            box.appendChild(text);
-            zonaContainer.appendChild(box);
-            zonaContainer.appendChild(arrow);
-            zonaContainer.appendChild(updateSphere);
-            zonaContainer.appendChild(updateCounter);
-            
-            // Agregar el contenedor a la entidad de objetos persistentes
-            persistentObjects.appendChild(zonaContainer);
-        }
-        
-        // Función para actualizar la posición de los objetos persistentes
-        function actualizarPosicionObjetosPersistentes(zona) {
-            const persistentEntity = document.getElementById(`${zona.id}Persistent`);
-            const updateSphere = document.getElementById(`update${zona.id}`);
-            const updateCounter = document.getElementById(`counter${zona.id}`);
-            
-            if (persistentEntity) {
-                // Actualizar posición
-                persistentEntity.setAttribute('position', `${zona.position.x} ${zona.position.y} ${zona.position.z}`);
+                // Eventos para el marcador 3
+                marker3.addEventListener('markerFound', () => {
+                    this.cubo3.setAttribute('scale', '1 1 1');
+                    console.log('Marcador 3 encontrado, mostrando cubo 3');
+                });
                 
-                // Mostrar efecto visual de actualización
-                if (updateSphere) {
-                    updateSphere.setAttribute('visible', 'true');
-                    updateSphere.setAttribute('animation', 'property: scale; from: 0.1 0.1 0.1; to: 1 1 1; dur: 1000; easing: easeOutElastic');
-                    updateSphere.setAttribute('animation__opacity', 'property: material.opacity; from: 1; to: 0; dur: 1000');
-                    
-                    // Ocultar después de la animación
-                    setTimeout(() => {
-                        updateSphere.setAttribute('visible', 'false');
-                        updateSphere.removeAttribute('animation');
-                        updateSphere.removeAttribute('animation__opacity');
-                    }, 1000);
-                }
-                
-                // Actualizar contador visible
-                if (updateCounter) {
-                    updateCounter.setAttribute('value', contadorActualizaciones[zona.id].toString());
-                    updateCounter.setAttribute('visible', 'true');
-                    
-                    // Ocultar después de 3 segundos
-                    setTimeout(() => {
-                        updateCounter.setAttribute('visible', 'false');
-                    }, 3000);
-                }
+                marker3.addEventListener('markerLost', () => {
+                    this.cubo3.setAttribute('scale', '0 0 0');
+                    console.log('Marcador 3 perdido, ocultando cubo 3');
+                });
             }
-        }
-        
-        // Resetear el estado visual de todos los marcadores (solo estilo, no visibilidad)
-        function resetearEstadoMarcadores() {
-            zonasAlmacen.forEach(zona => {
-                const box = document.getElementById(`${zona.id}Box`);
-                const arrow = document.getElementById(`flecha${zona.id}`);
-                
-                if (box) {
-                    box.setAttribute('material', `color: ${zona.color}; opacity: 0.7`);
-                    box.removeAttribute('animation');
-                }
-                
-                if (arrow) {
-                    arrow.setAttribute('visible', 'false');
-                }
-            });
-        }
-        
-        // Función para buscar productos
-        function buscarProducto() {
-            const searchTerm = productSearch.value.toLowerCase().trim();
-            
-            // Resetear todas las flechas y estilos
-            resetearEstadoMarcadores();
-            
-            if (searchTerm === '') {
-                productInfo.style.display = 'none';
-                return;
-            }
-            
-            // Buscar el producto
-            const producto = productosDB[searchTerm];
-            
-            if (producto) {
-                // Mostrar información del producto
-                productInfo.innerHTML = `
-                    <h3>${searchTerm.toUpperCase()}</h3>
-                    <p>${producto.descripcion}</p>
-                    <p>Precio: ${producto.precio}</p>
-                    <p>Sección: ${zonasAlmacen.find(z => z.id === producto.seccion).nombre}</p>
-                `;
-                productInfo.style.display = 'block';
-                
-                // Activar flecha y destacar la sección correspondiente
-                const seccionId = producto.seccion;
-                const box = document.getElementById(`${seccionId}Box`);
-                const arrow = document.getElementById(`flecha${seccionId}`);
-                const zona = zonasAlmacen.find(z => z.id === seccionId);
-                
-                if (box && arrow && zona) {
-                    arrow.setAttribute('visible', 'true');
-                    box.setAttribute('material', `color: ${zona.color}; opacity: 1; emissive: ${zona.color}`);
-                    box.setAttribute('animation', 'property: scale; to: 1.2 1.2 1.2; dur: 1000; easing: easeInOutQuad; loop: true');
-                    
-                    // Si el marcador ha sido visto, mostramos dirección hacia él
-                    if (marcadoresVistos[seccionId]) {
-                        statusIndicator.textContent = `Producto encontrado en: ${zona.nombre}`;
-                    } else {
-                        statusIndicator.textContent = `Busca el marcador de: ${zona.nombre}`;
-                    }
-                }
-            } else {
-                productInfo.innerHTML = `<p>Producto "${searchTerm}" no encontrado</p>`;
-                productInfo.style.display = 'block';
-                statusIndicator.textContent = 'Producto no encontrado';
-            }
-        }
-        
-        // Inicialización
-        window.addEventListener('load', () => {
-            crearMarcadores();
-            
-            // Configurar eventos de búsqueda
-            searchBtn.addEventListener('click', buscarProducto);
-            productSearch.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    buscarProducto();
-                }
-            });
         });
     </script>
+</head>
+<body style="margin: 0; overflow: hidden;">
+    <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;" qr-detector>
+        <!-- Cámara con cursor -->
+        <a-entity camera>
+            <a-cursor></a-cursor>
+        </a-entity>
+        
+        <!-- Marcadores -->
+        <a-marker id="marker1" type="pattern" url="path/to/pattern-marker1.patt">
+            <!-- Cubo 1 - inicialmente invisible, se mostrará al detectar marker1 -->
+            <a-box id="cubo1" position="0 0.5 0" color="red" scale="0 0 0"></a-box>
+        </a-marker>
+        
+        <a-marker id="marker2" type="pattern" url="path/to/pattern-marker2.patt">
+            <!-- Cubo 2 - inicialmente invisible, se mostrará al detectar marker2 -->
+            <a-box id="cubo2" position="0 0.5 0" color="green" scale="0 0 0"></a-box>
+        </a-marker>
+        
+        <a-marker id="marker3" type="pattern" url="path/to/pattern-marker3.patt">
+            <!-- Cubo 3 - inicialmente invisible, se mostrará al detectar marker3 -->
+            <a-box id="cubo3" position="0 0.5 0" color="blue" scale="0 0 0"></a-box>
+        </a-marker>
+    </a-scene>
 </body>
 </html>
