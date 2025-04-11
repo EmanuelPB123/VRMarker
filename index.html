@@ -2,86 +2,119 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Cubos activados por QR</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AR.js QR Detector</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/aframe/1.3.0/aframe.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/AR.js/2.2.2/aframe-ar.js"></script>
+    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        .arjs-loader {
+            height: 100%;
+            width: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 9999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .arjs-loader div {
+            text-align: center;
+            font-size: 1.25em;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <!-- Loader mientras se inicializa AR -->
+    <div class="arjs-loader">
+        <div>Cargando experiencia AR, por favor espera...</div>
+    </div>
+
+    <a-scene
+        vr-mode-ui="enabled: false"
+        renderer="logarithmicDepthBuffer: true; precision: medium;"
+        embedded
+        arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false;">
+
+        <!-- Usa marcadores predefinidos para evitar problemas con archivos .patt -->
+        <a-marker preset="hiro" id="marker1">
+            <a-box position="0 0.5 0" color="red" scale="1 1 1"></a-box>
+        </a-marker>
+
+        <a-marker preset="kanji" id="marker2">
+            <a-box position="0 0.5 0" color="green" scale="1 1 1"></a-box>
+        </a-marker>
+
+        <!-- Para un tercer marcador personalizado -->
+        <a-marker type="pattern" url="pattern-marker.patt" id="marker3">
+            <a-box position="0 0.5 0" color="blue" scale="1 1 1"></a-box>
+        </a-marker>
+
+        <!-- Opción alternativa: usar códigos QR como marcadores -->
+        <a-marker type="barcode" value="1" id="qrmarker1">
+            <a-box position="0 0.5 0" color="yellow" scale="1 1 1"></a-box>
+        </a-marker>
+
+        <a-entity camera></a-entity>
+    </a-scene>
+
     <script>
-        // Componente personalizado para manejar la visibilidad de los cubos
-        AFRAME.registerComponent('qr-detector', {
-            init: function () {
-                // Obtener referencias a los cubos
-                this.cubo1 = document.querySelector('#cubo1');
-                this.cubo2 = document.querySelector('#cubo2');
-                this.cubo3 = document.querySelector('#cubo3');
-                
-                // Inicializar todos los cubos como invisibles
-                this.cubo1.setAttribute('scale', '0 0 0');
-                this.cubo2.setAttribute('scale', '0 0 0');
-                this.cubo3.setAttribute('scale', '0 0 0');
-                
-                // Configurar eventos para cada marcador
-                let marker1 = document.querySelector('#marker1');
-                let marker2 = document.querySelector('#marker2');
-                let marker3 = document.querySelector('#marker3');
-                
-                // Eventos para el marcador 1
-                marker1.addEventListener('markerFound', () => {
-                    this.cubo1.setAttribute('scale', '1 1 1');
-                    console.log('Marcador 1 encontrado, mostrando cubo 1');
-                });
-                
-                marker1.addEventListener('markerLost', () => {
-                    this.cubo1.setAttribute('scale', '0 0 0');
-                    console.log('Marcador 1 perdido, ocultando cubo 1');
-                });
-                
-                // Eventos para el marcador 2
-                marker2.addEventListener('markerFound', () => {
-                    this.cubo2.setAttribute('scale', '1 1 1');
-                    console.log('Marcador 2 encontrado, mostrando cubo 2');
-                });
-                
-                marker2.addEventListener('markerLost', () => {
-                    this.cubo2.setAttribute('scale', '0 0 0');
-                    console.log('Marcador 2 perdido, ocultando cubo 2');
-                });
-                
-                // Eventos para el marcador 3
-                marker3.addEventListener('markerFound', () => {
-                    this.cubo3.setAttribute('scale', '1 1 1');
-                    console.log('Marcador 3 encontrado, mostrando cubo 3');
-                });
-                
-                marker3.addEventListener('markerLost', () => {
-                    this.cubo3.setAttribute('scale', '0 0 0');
-                    console.log('Marcador 3 perdido, ocultando cubo 3');
-                });
-            }
+        // Ocultar el loader cuando la escena esté lista
+        document.addEventListener("DOMContentLoaded", function() {
+            const scene = document.querySelector('a-scene');
+            
+            scene.addEventListener('loaded', function () {
+                const loader = document.querySelector('.arjs-loader');
+                if (loader) {
+                    loader.style.display = 'none';
+                }
+            });
+
+            // Configurar eventos para los marcadores
+            const marker1 = document.querySelector('#marker1');
+            const marker2 = document.querySelector('#marker2');
+            const marker3 = document.querySelector('#marker3');
+            const qrmarker1 = document.querySelector('#qrmarker1');
+
+            // Cubo 1
+            const cubo1 = marker1.querySelector('a-box');
+            cubo1.setAttribute('scale', '0 0 0'); // Inicialmente invisible
+            
+            marker1.addEventListener('markerFound', function() {
+                console.log('Marcador Hiro encontrado');
+                cubo1.setAttribute('scale', '1 1 1');
+            });
+            
+            marker1.addEventListener('markerLost', function() {
+                console.log('Marcador Hiro perdido');
+                cubo1.setAttribute('scale', '0 0 0');
+            });
+
+            // Configuración similar para otros marcadores...
+            const cubo2 = marker2.querySelector('a-box');
+            cubo2.setAttribute('scale', '0 0 0');
+            
+            marker2.addEventListener('markerFound', function() {
+                console.log('Marcador Kanji encontrado');
+                cubo2.setAttribute('scale', '1 1 1');
+            });
+            
+            marker2.addEventListener('markerLost', function() {
+                console.log('Marcador Kanji perdido');
+                cubo2.setAttribute('scale', '0 0 0');
+            });
         });
     </script>
-</head>
-<body style="margin: 0; overflow: hidden;">
-    <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;" qr-detector>
-        <!-- Cámara con cursor -->
-        <a-entity camera>
-            <a-cursor></a-cursor>
-        </a-entity>
-        
-        <!-- Marcadores -->
-        <a-marker id="marker1" type="pattern" url="zona1.patt">
-            <!-- Cubo 1 - inicialmente invisible, se mostrará al detectar marker1 -->
-            <a-box id="cubo1" position="0 0.5 0" color="red" scale="0 0 0"></a-box>
-        </a-marker>
-        
-        <a-marker id="marker2" type="pattern" url="zona2.patt">
-            <!-- Cubo 2 - inicialmente invisible, se mostrará al detectar marker2 -->
-            <a-box id="cubo2" position="0 0.5 0" color="green" scale="0 0 0"></a-box>
-        </a-marker>
-        
-        <a-marker id="marker3" type="pattern" url="zona3.patt">
-            <!-- Cubo 3 - inicialmente invisible, se mostrará al detectar marker3 -->
-            <a-box id="cubo3" position="0 0.5 0" color="blue" scale="0 0 0"></a-box>
-        </a-marker>
-    </a-scene>
 </body>
 </html>
