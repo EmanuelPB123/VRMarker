@@ -1,74 +1,26 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
-    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
-    <link rel="stylesheet" href="styles.css">
+    <meta charset="utf-8">
+    <title>AR.js + patrón .patt + Cubo</title>
+    <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
+    <script src="https://cdn.rawgit.com/jeromeetienne/ar.js/2.2.1/aframe/build/aframe-ar.js"></script>
     <style>
-      .buttons {
-        position: absolute;
-        top: 10px;
-        left: 50%;
-        transform: translateX(-50%);
-        z-index: 999;
-        display: flex;
-        gap: 10px;
-      }
-      .buttons button {
-        padding: 10px 20px;
-        background-color: rgba(255, 255, 255, 0.7);
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-      }
+      body { margin: 0; overflow: hidden; }
+      a-scene { width: 100vw; height: 100vh; }
     </style>
   </head>
-  <body style="margin: 0; overflow: hidden;">
-    <div class="buttons">
-      <button onclick="switchScene('scene1')">Escena 1</button>
-      <button onclick="switchScene('scene2')">Escena 2</button>
-    </div>
-    
-    <a-scene id="scene1" 
-             embedded
-             vr-mode-ui="enabled: false"
-             arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false;">
-      <a-marker type="pattern" url="zona1.patt">
-        <a-box position="0 0.5 0" 
-               rotation="0 45 0" 
-               color="red" 
-               material="opacity: 0.9"
-               animation="property: rotation; to: 0 360 0; loop: true; dur: 5000"></a-box>
-      </a-marker>
-      <a-entity camera></a-entity>
-    </a-scene>
-    
-    <a-scene id="scene2" 
-             embedded
-             vr-mode-ui="enabled: false"
-             arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false;"
-             style="display: none;">
-      <a-marker type="pattern" url="./zona1.patt">
-        <a-box position="0 0.5 0" 
-               rotation="0 45 0" 
-               color="blue" 
-               material="opacity: 0.9"
-               animation="property: rotation; to: 0 360 0; loop: true; dur: 5000"></a-box>
-      </a-marker>
-      <a-entity camera></a-entity>
-    </a-scene>
 
-    <script>
-      function switchScene(sceneId) {
-        if (sceneId === 'scene1') {
-          document.getElementById('scene1').style.display = 'block';
-          document.getElementById('scene2').style.display = 'none';
-        } else {
-          document.getElementById('scene1').style.display = 'none';
-          document.getElementById('scene2').style.display = 'block';
-        }
-      }
-    </script>
+  <body>
+    <a-scene embedded arjs="sourceType: webcam;">
+      <!-- Cámara -->
+      <a-marker type="pattern" url="hiro.patt">
+        <!-- Cubito rojo -->
+        <a-box position="0 0.5 0" material="color: red;"></a-box>
+      </a-marker>
+      
+      <!-- Plano donde se verá el cubo -->
+      <a-entity camera></a-entity>
+    </a-scene>
   </body>
 </html>
