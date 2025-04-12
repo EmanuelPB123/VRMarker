@@ -1,249 +1,41 @@
 <!DOCTYPE html>
 <html>
-<head>
-    <meta charset="utf-8">
-    <title>Buscador de Productos RA</title>
-    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
     <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
-    <style>
-        .search-container {
-            position: fixed;
-            bottom: 10px;
-            left: 10px;
-            right: 10px;
-            z-index: 999;
-            background: rgba(0, 0, 0, 0.7);
-            padding: 10px;
-            border-radius: 5px;
-            display: flex;
-        }
-        #productSearch {
-            width: 80%;
-            padding: 8px;
-            border-radius: 4px;
-            border: none;
-        }
-        #searchBtn {
-            width: 20%;
-            padding: 8px;
-            background: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            margin-left: 5px;
-        }
-        .overlay-info {
-            position: fixed;
-            top: 10px;
-            left: 10px;
-            background: rgba(0, 0, 0, 0.7);
-            color: white;
-            padding: 10px;
-            border-radius: 5px;
-            display: none;
-            z-index: 999;
-        }
-    </style>
-</head>
-<body style="margin: 0; overflow: hidden;">
-    <!-- Interface de búsqueda -->
-    <div class="search-container">
-        <input type="text" id="productSearch" placeholder="Buscar producto...">
-        <button id="searchBtn">Buscar</button>
+    <script src="script.js"></script>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body style="margin: 0; overflow: hidden;">
+    <div class="buttons">
+      <button onclick="switchScene('scene1')">Escena 1</button>
+      <button onclick="switchScene('scene2')">Escena 2</button>
     </div>
-    
-    <!-- Información del producto -->
-    <div id="productInfo" class="overlay-info"></div>
-    
-    <!-- Escena A-Frame -->
-    <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;" vr-mode-ui="enabled: false">
-        
-        <!-- Marcadores individuales para cada producto -->
-        <!-- Agua -->
-        <a-marker id="aguaMarker" type="pattern" url="zona.patt">
-            <a-box position="0 0.5 0" material="color: blue; opacity: 0.7" scale="1 1 1">
-                <a-text value="Agua mineral" position="0 1.2 0" align="center" color="#FFF" scale="1.5 1.5 1.5"></a-text>
-            </a-box>
-            <a-entity id="infoAgua" position="0 0.1 0">
-                <a-plane position="0 0.5 0" rotation="-90 0 0" width="1.5" height="1" color="#333" opacity="0.8">
-                    <a-text value="Agua mineral 1.5L\nPrecio: $250" align="center" position="0 0 0.01" color="white" width="1.4"></a-text>
-                </a-plane>
-            </a-entity>
-        </a-marker>
-        
-        <!-- Gaseosa -->
-        <a-marker id="gaseosaMarker" type="pattern" url="zona.patt">
-            <a-box position="0 0.5 0" material="color: blue; opacity: 0.7" scale="1 1 1">
-                <a-text value="Gaseosa cola" position="0 1.2 0" align="center" color="#FFF" scale="1.5 1.5 1.5"></a-text>
-            </a-box>
-            <a-entity id="infoGaseosa" position="0 0.1 0">
-                <a-plane position="0 1.5 0" rotation="-90 0 0" width="1.5" height="1" color="#333" opacity="0.8">
-                    <a-text value="Gaseosa cola 2L\nPrecio: $600" align="center" position="0 0 0.01" color="white" width="1.4"></a-text>
-                </a-plane>
-            </a-entity>
-        </a-marker>
-        
-        <!-- Leche -->
-        <a-marker id="lecheMarker" type="pattern" url="zona1.patt">
-            <a-box position="0 -5 0" material="color: green; opacity: 0.7" scale="3 3 3">
-                <a-text value="Leche" position="0 1.2 0" align="center" color="#FFF" scale="1.5 1.5 1.5"></a-text>
-            </a-box>
-            <a-entity id="infoLeche" position="0 0.1 0">
-                <a-plane position="0 1 0" rotation="-90 0 0" width="1.5" height="1" color="#333" opacity="0.8">
-                    <a-text value="Leche entera 1L\nPrecio: $350" align="center" position="0 0 0.01" color="white" width="1.4"></a-text>
-                </a-plane>
-            </a-entity>
-        </a-marker>
-        
-        <!-- Yogur -->
-        <a-marker id="yogurMarker" type="pattern" url="zona.patt">
-            <a-box position="0 0.5 0" material="color: green; opacity: 0.7" scale="1 1 1">
-                <a-text value="Yogur" position="0 1.2 0" align="center" color="#FFF" scale="1.5 1.5 1.5"></a-text>
-            </a-box>
-            <a-entity id="infoYogur" position="0 0.1 0">
-                <a-plane position="0 1 0" rotation="-90 0 0" width="1.5" height="1" color="#333" opacity="0.8">
-                    <a-text value="Yogur bebible 1L\nPrecio: $400" align="center" position="0 0 0.01" color="white" width="1.4"></a-text>
-                </a-plane>
-            </a-entity>
-        </a-marker>
-        
-        <!-- Detergente -->
-        <a-marker id="detergenteMarker" type="pattern" url="zona.patt">
-            <a-box position="0 0.5 0" material="color: red; opacity: 0.7" scale="1 1 1">
-                <a-text value="Detergente" position="0 1.2 0" align="center" color="#FFF" scale="1.5 1.5 1.5"></a-text>
-            </a-box>
-            <a-entity id="infoDetergente" position="0 0.1 0">
-                <a-plane position="0 1 0" rotation="-90 0 0" width="1.5" height="1" color="#333" opacity="0.8">
-                    <a-text value="Detergente conc. 500ml\nPrecio: $450" align="center" position="0 0 0.01" color="white" width="1.4"></a-text>
-                </a-plane>
-            </a-entity>
-        </a-marker>
-        
-        <!-- Jabón -->
-        <a-marker id="jabonMarker" type="pattern" url="zonajabon.patt">
-            <a-box position="0 0.5 0" material="color: red; opacity: 0.7" scale="1 1 1">
-                <a-text value="Jabón en polvo" position="0 1.2 0" align="center" color="#FFF" scale="1.5 1.5 1.5"></a-text>
-            </a-box>
-            <a-entity id="infoJabon" position="0 0.1 0">
-                <a-plane position="0 1 0" rotation="-90 0 0" width="1.5" height="1" color="#333" opacity="0.8">
-                    <a-text value="Jabón en polvo 800g\nPrecio: $700" align="center" position="0 0 0.01" color="white" width="1.4"></a-text>
-                </a-plane>
-            </a-entity>
-        </a-marker>
-        
-        <a-entity camera></a-entity>
+    <a-scene id="scene1" 
+             embedded
+             arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false;">
+      <a-marker type="pattern" url="patterns/pattern-marker1.patt">
+        <a-box position="0 0.5 0" 
+               rotation="0 45 0" 
+               color="red" 
+               material="opacity: 0.9"
+               animation="property: rotation; to: 0 360 0; loop: true; dur: 5000"></a-box>
+      </a-marker>
+      <a-entity camera></a-entity>
     </a-scene>
-    
-    <script>
-        // Base de datos de productos con sus respectivos marcadores
-        const productosDB = {
-            "agua": { 
-                seccion: "bebidas", 
-                descripcion: "Agua mineral 1.5L", 
-                precio: "$250",
-                marker: "aguaMarker"
-            },
-            "gaseosa": { 
-                seccion: "bebidas", 
-                descripcion: "Gaseosa cola 2L", 
-                precio: "$600",
-                marker: "gaseosaMarker"
-            },
-            "leche": { 
-                seccion: "lacteos", 
-                descripcion: "Leche entera 1L", 
-                precio: "$350",
-                marker: "lecheMarker"
-            },
-            "yogur": { 
-                seccion: "lacteos", 
-                descripcion: "Yogur bebible 1L", 
-                precio: "$400",
-                marker: "yogurMarker"
-            },
-            "detergente": { 
-                seccion: "limpieza", 
-                descripcion: "Detergente conc. 500ml", 
-                precio: "$450",
-                marker: "detergenteMarker"
-            },
-            "jabon": { 
-                seccion: "limpieza", 
-                descripcion: "Jabón en polvo 800g", 
-                precio: "$700",
-                marker: "jabonMarker"
-            }
-        };
-        
-        // Elementos DOM
-        const searchBtn = document.getElementById('searchBtn');
-        const productSearch = document.getElementById('productSearch');
-        const productInfo = document.getElementById('productInfo');
-        
-        // Lista de todos los marcadores
-        const marcadores = [
-            document.getElementById('aguaMarker'),
-            document.getElementById('gaseosaMarker'),
-            document.getElementById('lecheMarker'),
-            document.getElementById('yogurMarker'),
-            document.getElementById('detergenteMarker'),
-            document.getElementById('jabonMarker')
-        ];
-        
-        // Función para resetear todos los marcadores a su estado normal
-        function resetearMarcadores() {
-            marcadores.forEach(marker => {
-                if (marker.querySelector('a-box')) {
-                    marker.querySelector('a-box').removeAttribute('animation');
-                    marker.querySelector('a-box').setAttribute('scale', '1 1 1');
-                }
-            });
-        }
-        
-        // Función para buscar productos
-        searchBtn.addEventListener('click', () => {
-            const searchTerm = productSearch.value.toLowerCase().trim();
-            
-            // Resetear todos los marcadores
-            resetearMarcadores();
-            
-            if (searchTerm === '') {
-                productInfo.style.display = 'none';
-                return;
-            }
-            
-            // Buscar el producto
-            const producto = productosDB[searchTerm];
-            
-            if (producto) {
-                // Mostrar información del producto
-                productInfo.innerHTML = `
-                    <h3>${searchTerm.toUpperCase()}</h3>
-                    <p>${producto.descripcion}</p>
-                    <p>Precio: ${producto.precio}</p>
-                    <p>Sección: ${producto.seccion}</p>
-                    <p>Busca el marcador de ${searchTerm} para ver en realidad aumentada</p>
-                `;
-                productInfo.style.display = 'block';
-                
-                // Destacar el marcador correspondiente
-                const marcador = document.getElementById(producto.marker);
-                if (marcador && marcador.querySelector('a-box')) {
-                    const box = marcador.querySelector('a-box');
-                    box.setAttribute('animation', 'property: scale; to: 1.2 1.2 1.2; dur: 1000; easing: easeInOutQuad; loop: true');
-                }
-            } else {
-                productInfo.innerHTML = `<p>Producto "${searchTerm}" no encontrado</p>`;
-                productInfo.style.display = 'block';
-            }
-        });
-        
-        // También buscar al presionar Enter
-        productSearch.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                searchBtn.click();
-            }
-        });
-    </script>
-</body>
+    <a-scene id="scene2" 
+             embedded
+             arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false;"
+             style="display: none;">
+      <a-marker type="pattern" url="patterns/pattern-marker2.patt">
+        <a-box position="0 0.5 0" 
+               rotation="0 45 0" 
+               color="blue" 
+               material="opacity: 0.9"
+               animation="property: rotation; to: 0 360 0; loop: true; dur: 5000"></a-box>
+      </a-marker>
+      <a-entity camera></a-entity>
+    </a-scene>
+  </body>
 </html>
