@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Sistema AR con Imágenes - Responsive</title>
+    <title>Sistema AR - Grupos de Cubos</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
@@ -15,64 +15,38 @@
         }
         .button-container {
             position: fixed;
-            bottom: 4vh;
+            bottom: 20px;
             width: 100%;
             display: flex;
             justify-content: center;
-            gap: 3vw;
+            gap: 20px;
             z-index: 999;
+            flex-wrap: wrap;
         }
         .scene-button {
             background: rgba(0, 0, 0, 0.7);
             color: white;
             border: 2px solid white;
-            padding: 2vh 3vw;
-            font-size: clamp(14px, 4vw, 18px);
+            padding: 10px 15px;
+            font-size: 18px;
             border-radius: 5px;
             cursor: pointer;
-            min-width: 20vw;
-            max-width: 40vw;
-            text-align: center;
+            margin-bottom: 10px;
         }
         .active-button {
             background: rgba(76, 175, 80, 0.8);
         }
         .status-indicator {
             position: fixed;
-            top: 2vh;
-            left: 2vw;
+            top: 10px;
+            left: 10px;
             background: rgba(0, 0, 0, 0.7);
             color: white;
-            padding: 1vh 2vw;
+            padding: 5px 10px;
             border-radius: 5px;
             z-index: 999;
             font-family: Arial, sans-serif;
-            font-size: clamp(12px, 3.5vw, 16px);
-            width: auto;
-            max-width: 80vw;
-            text-align: center;
-        }
-        
-        /* Media queries para diferentes dispositivos */
-        @media (max-width: 480px) {
-            .scene-button {
-                padding: 1.5vh 3vw;
-            }
-            .button-container {
-                bottom: 2vh;
-                left: 5px
-            }
-        }
-        
-        @media (min-width: 768px) {
-            .scene-button {
-                max-width: 200px;
-                font-size: 18px;
-            }
-            .status-indicator {
-                font-size: 16px;
-                max-width: 500px;
-            }
+            font-size: 16px;
         }
     </style>
 </head>
@@ -82,26 +56,38 @@
     
     <!-- Botones para cambiar escenas -->
     <div class="button-container">
-        <button id="imagen1Button" class="scene-button active-button">Imagen 1</button>
-        <button id="imagen2Button" class="scene-button">Imagen 2</button>
+        <button id="grupo1Button" class="scene-button active-button">Grupo 1</button>
+        <button id="grupo2Button" class="scene-button">Grupo 2</button>
+        <button id="grupo3Button" class="scene-button">Grupo 3</button>
     </div>
     
     <!-- Una sola escena A-Frame -->
     <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix;" vr-mode-ui="enabled: false" renderer="logarithmicDepthBuffer: true;">
-        <!-- Definir assets para las imágenes -->
-        <a-assets>
-            <!-- Reemplaza estas URLs con las URLs de tus imágenes -->
-            <img id="img1" src="pattern-marker.png" alt="Imagen 1">
-            <img id="img2" src="99087599.700x525.jpg" alt="Imagen 2">
-        </a-assets>
         
-        <!-- Un solo marcador con múltiples imágenes -->
+        <!-- Un solo marcador con múltiples grupos de cubos -->
         <a-marker id="miMarcador" type="pattern" url="zona1.patt" raycaster="objects: .clickable" emitevents="true">
-            <!-- Imagen 1 -->
-            <a-plane id="imagen1" position="0 0 0" rotation="-90 0 0" width="2" height="2" material="src: #img1; transparent: true; opacity: 1" visible="true"></a-plane>
             
-            <!-- Imagen 2 -->
-            <a-plane id="imagen2" position="0 0 0" rotation="-90 0 0" width="2" height="2" material="src: #img2; transparent: true; opacity: 1" visible="false"></a-plane>
+            <!-- Grupo 1: Dos cubos (rojo y azul) -->
+            <a-entity id="grupo1" visible="true">
+                <a-box position="0 0.5 0" rotation="0 0 0" scale="1 1 1" material="color: red; opacity: 0.8"></a-box>
+                <a-box position="1.5 0.5 0" rotation="0 45 0" scale="0.7 0.7 0.7" material="color: blue; opacity: 0.8"></a-box>
+            </a-entity>
+            
+            <!-- Grupo 2: Tres cubos en formación triangular -->
+            <a-entity id="grupo2" visible="false">
+                <a-box position="0 0.5 0" rotation="0 0 0" scale="0.8 0.8 0.8" material="color: green; opacity: 0.8"></a-box>
+                <a-box position="1 0.5 1" rotation="0 45 0" scale="0.8 0.8 0.8" material="color: yellow; opacity: 0.8"></a-box>
+                <a-box position="-1 0.5 1" rotation="0 -45 0" scale="0.8 0.8 0.8" material="color: purple; opacity: 0.8"></a-box>
+            </a-entity>
+            
+            <!-- Grupo 3: Formación de torre -->
+            <a-entity id="grupo3" visible="false">
+                <a-box position="0 0.25 0" rotation="0 0 0" scale="1.2 0.5 1.2" material="color: orange; opacity: 0.8"></a-box>
+                <a-box position="0 0.75 0" rotation="0 45 0" scale="0.9 0.5 0.9" material="color: cyan; opacity: 0.8"></a-box>
+                <a-box position="0 1.25 0" rotation="0 22.5 0" scale="0.6 0.5 0.6" material="color: pink; opacity: 0.8"></a-box>
+                <a-box position="0 1.75 0" rotation="0 0 0" scale="0.3 0.5 0.3" material="color: white; opacity: 0.8"></a-box>
+            </a-entity>
+            
         </a-marker>
         
         <!-- Cámara con cursor -->
@@ -112,68 +98,59 @@
         // Referencias a elementos DOM
         const statusIndicator = document.getElementById('statusIndicator');
         const marker = document.getElementById('miMarcador');
-        const imagen1Button = document.getElementById('imagen1Button');
-        const imagen2Button = document.getElementById('imagen2Button');
-        const imagen1 = document.getElementById('imagen1');
-        const imagen2 = document.getElementById('imagen2');
+        const grupo1Button = document.getElementById('grupo1Button');
+        const grupo2Button = document.getElementById('grupo2Button');
+        const grupo3Button = document.getElementById('grupo3Button');
+        const grupo1 = document.getElementById('grupo1');
+        const grupo2 = document.getElementById('grupo2');
+        const grupo3 = document.getElementById('grupo3');
         
-        // Configuración de imágenes
-        const imagenes = [
-            { element: imagen1, button: imagen1Button, nombre: 'Imagen 1' },
-            { element: imagen2, button: imagen2Button, nombre: 'Imagen 2' }
+        // Configuración de grupos
+        const grupos = [
+            { element: grupo1, button: grupo1Button, nombre: 'Cubos Rojo y Azul' },
+            { element: grupo2, button: grupo2Button, nombre: 'Triángulo Verde' },
+            { element: grupo3, button: grupo3Button, nombre: 'Torre Multicolor' }
         ];
         
-        let imagenActualIndex = 0;
+        let grupoActualIndex = 0;
         
-        // Función para cambiar entre imágenes
-        function cambiarAImagen(index) {
-            // Ocultar todas las imágenes
-            imagenes.forEach((imagen, i) => {
-                imagen.element.setAttribute('visible', 'false');
-                imagen.button.classList.remove('active-button');
+        // Función para cambiar entre grupos
+        function cambiarAGrupo(index) {
+            // Ocultar todos los grupos
+            grupos.forEach((grupo, i) => {
+                grupo.element.setAttribute('visible', 'false');
+                grupo.button.classList.remove('active-button');
             });
             
-            // Mostrar la imagen seleccionada
-            imagenActualIndex = index;
-            imagenes[imagenActualIndex].element.setAttribute('visible', 'true');
-            imagenes[imagenActualIndex].button.classList.add('active-button');
+            // Mostrar el grupo seleccionado
+            grupoActualIndex = index;
+            grupos[grupoActualIndex].element.setAttribute('visible', 'true');
+            grupos[grupoActualIndex].button.classList.add('active-button');
             
             // Actualizar el indicador
-            statusIndicator.textContent = `Mostrando: ${imagenes[imagenActualIndex].nombre}`;
+            statusIndicator.textContent = `Mostrando: ${grupos[grupoActualIndex].nombre}`;
         }
         
         // Detectar cuando se encuentra el marcador
         marker.addEventListener('markerFound', () => {
-            statusIndicator.textContent = `Marcador detectado - ${imagenes[imagenActualIndex].nombre}`;
+            statusIndicator.textContent = `Marcador detectado - ${grupos[grupoActualIndex].nombre}`;
         });
         
         // Detectar cuando se pierde el marcador
         marker.addEventListener('markerLost', () => {
-            statusIndicator.textContent = `Buscando marcador... (${imagenes[imagenActualIndex].nombre})`;
+            statusIndicator.textContent = `Buscando marcador... (${grupos[grupoActualIndex].nombre})`;
         });
         
         // Asignar eventos a los botones
-        imagen1Button.addEventListener('click', () => cambiarAImagen(0));
-        imagen2Button.addEventListener('click', () => cambiarAImagen(1));
-        
-        // Adaptación dinámica al tamaño de pantalla
-        function ajustarInterfaz() {
-            // Ajustar altura de botones en dispositivos muy pequeños
-            if (window.innerHeight < 400) {
-                document.querySelector('.button-container').style.bottom = '10px';
-            }
-        }
+        grupo1Button.addEventListener('click', () => cambiarAGrupo(0));
+        grupo2Button.addEventListener('click', () => cambiarAGrupo(1));
+        grupo3Button.addEventListener('click', () => cambiarAGrupo(2));
         
         // Inicializar
         document.addEventListener('DOMContentLoaded', () => {
-            // Empezar con la primera imagen
-            cambiarAImagen(0);
-            // Ajustar interfaz según el tamaño de pantalla
-            ajustarInterfaz();
+            // Empezar con el primer grupo
+            cambiarAGrupo(0);
         });
-        
-        // Reajustar interfaz cuando cambie el tamaño de la ventana
-        window.addEventListener('resize', ajustarInterfaz);
     </script>
 </body>
 </html>
