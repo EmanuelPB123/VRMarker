@@ -2,24 +2,20 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <title>AR.js + patrón .patt + Cubo</title>
-    <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
-    <script src="https://cdn.rawgit.com/jeromeetienne/ar.js/2.2.1/aframe/build/aframe-ar.js"></script>
-    <style>
-      body { margin: 0; overflow: hidden; }
-      a-scene { width: 100vw; height: 100vh; }
-    </style>
+    <title>AR con A-Frame y Marcador</title>
+    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+    <script src="https://cdn.rawgit.com/jeromeetienne/AR.js/3.3.2/aframe/build/aframe-ar.min.js"></script>
   </head>
-
-  <body>
-    <a-scene embedded arjs="sourceType: webcam;">
-      <!-- Cámara -->
-      <a-marker type="pattern" url="zona1.patt">
-        <!-- Cubito rojo -->
+  <body style="margin: 0; overflow: hidden;">
+    <a-scene embedded arjs>
+      <!-- Marcador personalizado con objetos dentro -->
+      <a-marker type='pattern' url='path/to/pattern-marker.patt'>
         <a-box position="0 0.5 0" material="color: red;"></a-box>
+        <a-sphere position="1 0.5 0" radius="0.5" color="blue"></a-sphere>
+        <a-cylinder position="-1 0.75 0" radius="0.3" height="1.5" color="yellow"></a-cylinder>
       </a-marker>
-      
-      <!-- Plano donde se verá el cubo -->
+
+      <!-- Cámara de la escena -->
       <a-entity camera></a-entity>
     </a-scene>
   </body>
