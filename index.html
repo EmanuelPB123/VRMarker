@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Sistema AR Simple - Cambio de Cubos</title>
+    <title>Sistema AR Simple - Responsive</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
@@ -15,36 +15,63 @@
         }
         .button-container {
             position: fixed;
-            bottom: 20px;
+            bottom: 4vh;
             width: 100%;
             display: flex;
             justify-content: center;
-            gap: 20px;
+            gap: 3vw;
             z-index: 999;
         }
         .scene-button {
             background: rgba(0, 0, 0, 0.7);
             color: white;
             border: 2px solid white;
-            padding: 10px 15px;
-            font-size: 18px;
+            padding: 2vh 3vw;
+            font-size: clamp(14px, 4vw, 18px);
             border-radius: 5px;
             cursor: pointer;
+            min-width: 20vw;
+            max-width: 40vw;
+            text-align: center;
         }
         .active-button {
             background: rgba(76, 175, 80, 0.8);
         }
         .status-indicator {
             position: fixed;
-            top: 10px;
-            left: 10px;
+            top: 2vh;
+            left: 2vw;
             background: rgba(0, 0, 0, 0.7);
             color: white;
-            padding: 5px 10px;
+            padding: 1vh 2vw;
             border-radius: 5px;
             z-index: 999;
             font-family: Arial, sans-serif;
-            font-size: 16px;
+            font-size: clamp(12px, 3.5vw, 16px);
+            width: auto;
+            max-width: 80vw;
+            text-align: center;
+        }
+        
+        /* Media queries para diferentes dispositivos */
+        @media (max-width: 480px) {
+            .scene-button {
+                padding: 1.5vh 3vw;
+            }
+            .button-container {
+                bottom: 2vh;
+            }
+        }
+        
+        @media (min-width: 768px) {
+            .scene-button {
+                max-width: 200px;
+                font-size: 18px;
+            }
+            .status-indicator {
+                font-size: 16px;
+                max-width: 500px;
+            }
         }
     </style>
 </head>
@@ -122,11 +149,24 @@
         cubo1Button.addEventListener('click', () => cambiarACubo(0));
         cubo2Button.addEventListener('click', () => cambiarACubo(1));
         
+        // Adaptación dinámica al tamaño de pantalla
+        function ajustarInterfaz() {
+            // Ajustar altura de botones en dispositivos muy pequeños
+            if (window.innerHeight < 400) {
+                document.querySelector('.button-container').style.bottom = '10px';
+            }
+        }
+        
         // Inicializar
         document.addEventListener('DOMContentLoaded', () => {
             // Empezar con el primer cubo
             cambiarACubo(0);
+            // Ajustar interfaz según el tamaño de pantalla
+            ajustarInterfaz();
         });
+        
+        // Reajustar interfaz cuando cambie el tamaño de la ventana
+        window.addEventListener('resize', ajustarInterfaz);
     </script>
 </body>
 </html>
