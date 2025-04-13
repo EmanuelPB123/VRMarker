@@ -1,20 +1,53 @@
 <!DOCTYPE html>
 <html>
-  <head>
+<head>
     <meta charset="utf-8">
-    <title>AR con A-Frame y Marcador</title>
-    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
-    <script src="https://cdn.rawgit.com/jeromeetienne/AR.js/3.3.2/aframe/build/aframe-ar.min.js"></script>
-  </head>
-  <body style="margin: 0; overflow: hidden;">
-    <a-scene embedded arjs="debugUIEnabled: true;">
-      <a-marker type="pattern" url="zona1.patt">
-        <a-box position="0 0.5 0" material="color: red;"></a-box>
-        <a-sphere position="1 0.5 0" radius="0.5" color="blue"></a-sphere>
-        <a-cylinder position="-1 0.75 0" radius="0.3" height="1.5" color="yellow"></a-cylinder>
-      </a-marker>
-
-      <a-entity camera></a-entity>
+    <title>Sistema AR Simple - Un Solo Marcador</title>
+    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+    <style>
+        .status-indicator {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            z-index: 999;
+        }
+    </style>
+</head>
+<body style="margin: 0; overflow: hidden;">
+    <!-- Indicador de estado simple -->
+    <div id="statusIndicator" class="status-indicator">Buscando marcador...</div>
+    
+    <!-- Escena A-Frame simplificada -->
+    <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;" vr-mode-ui="enabled: false">
+        
+        <!-- Un solo marcador -->
+        <a-marker id="miMarcador" type="pattern" url="zona1.patt">
+            <!-- Un cubo simple -->
+            <a-box position="0 0.5 0" material="color: #3498db; opacity: 0.7" scale="1 1 1"></a-box>
+        </a-marker>
+        
+        <a-entity camera></a-entity>
     </a-scene>
-  </body>
+    
+    <script>
+        // Referencias a elementos DOM
+        const statusIndicator = document.getElementById('statusIndicator');
+        const marker = document.getElementById('miMarcador');
+        
+        // Detectar cuando se encuentra el marcador
+        marker.addEventListener('markerFound', () => {
+            statusIndicator.textContent = 'Marcador detectado';
+        });
+        
+        // Detectar cuando se pierde el marcador
+        marker.addEventListener('markerLost', () => {
+            statusIndicator.textContent = 'Buscando marcador...';
+        });
+    </script>
+</body>
 </html>
