@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Sistema AR Simple - Responsive</title>
+    <title>Sistema AR con Imágenes - Responsive</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
@@ -82,20 +82,26 @@
     
     <!-- Botones para cambiar escenas -->
     <div class="button-container">
-        <button id="cubo1Button" class="scene-button active-button">Cubo Rojo</button>
-        <button id="cubo2Button" class="scene-button">Cubo Azul</button>
+        <button id="imagen1Button" class="scene-button active-button">Imagen 1</button>
+        <button id="imagen2Button" class="scene-button">Imagen 2</button>
     </div>
     
     <!-- Una sola escena A-Frame -->
     <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix;" vr-mode-ui="enabled: false" renderer="logarithmicDepthBuffer: true;">
+        <!-- Definir assets para las imágenes -->
+        <a-assets>
+            <!-- Reemplaza estas URLs con las URLs de tus imágenes -->
+            <img id="img1" src="/api/placeholder/400/320" alt="Imagen 1">
+            <img id="img2" src="/api/placeholder/400/320" alt="Imagen 2">
+        </a-assets>
         
-        <!-- Un solo marcador con múltiples cubos -->
+        <!-- Un solo marcador con múltiples imágenes -->
         <a-marker id="miMarcador" type="pattern" url="zona1.patt" raycaster="objects: .clickable" emitevents="true">
-            <!-- Cubo 1: Rojo -->
-            <a-box id="cubo1" position="0 -3 0" rotation="0 0 0" scale="2 2 2" material="color: red; opacity: 0.8" visible="true"></a-box>
+            <!-- Imagen 1 -->
+            <a-plane id="imagen1" position="0 0 0" rotation="-90 0 0" width="2" height="2" material="src: #img1; transparent: true; opacity: 1" visible="true"></a-plane>
             
-            <!-- Cubo 2: Azul -->
-            <a-box id="cubo2" position="0 0.5 0" rotation="0 0 0" scale="1 1 1" material="color: blue; opacity: 0.8" visible="false"></a-box>
+            <!-- Imagen 2 -->
+            <a-plane id="imagen2" position="0 0 0" rotation="-90 0 0" width="2" height="2" material="src: #img2; transparent: true; opacity: 1" visible="false"></a-plane>
         </a-marker>
         
         <!-- Cámara con cursor -->
@@ -106,49 +112,49 @@
         // Referencias a elementos DOM
         const statusIndicator = document.getElementById('statusIndicator');
         const marker = document.getElementById('miMarcador');
-        const cubo1Button = document.getElementById('cubo1Button');
-        const cubo2Button = document.getElementById('cubo2Button');
-        const cubo1 = document.getElementById('cubo1');
-        const cubo2 = document.getElementById('cubo2');
+        const imagen1Button = document.getElementById('imagen1Button');
+        const imagen2Button = document.getElementById('imagen2Button');
+        const imagen1 = document.getElementById('imagen1');
+        const imagen2 = document.getElementById('imagen2');
         
-        // Configuración de cubos
-        const cubos = [
-            { element: cubo1, button: cubo1Button, color: 'Rojo' },
-            { element: cubo2, button: cubo2Button, color: 'Azul' }
+        // Configuración de imágenes
+        const imagenes = [
+            { element: imagen1, button: imagen1Button, nombre: 'Imagen 1' },
+            { element: imagen2, button: imagen2Button, nombre: 'Imagen 2' }
         ];
         
-        let cuboActualIndex = 0;
+        let imagenActualIndex = 0;
         
-        // Función para cambiar entre cubos
-        function cambiarACubo(index) {
-            // Ocultar todos los cubos
-            cubos.forEach((cubo, i) => {
-                cubo.element.setAttribute('visible', 'false');
-                cubo.button.classList.remove('active-button');
+        // Función para cambiar entre imágenes
+        function cambiarAImagen(index) {
+            // Ocultar todas las imágenes
+            imagenes.forEach((imagen, i) => {
+                imagen.element.setAttribute('visible', 'false');
+                imagen.button.classList.remove('active-button');
             });
             
-            // Mostrar el cubo seleccionado
-            cuboActualIndex = index;
-            cubos[cuboActualIndex].element.setAttribute('visible', 'true');
-            cubos[cuboActualIndex].button.classList.add('active-button');
+            // Mostrar la imagen seleccionada
+            imagenActualIndex = index;
+            imagenes[imagenActualIndex].element.setAttribute('visible', 'true');
+            imagenes[imagenActualIndex].button.classList.add('active-button');
             
             // Actualizar el indicador
-            statusIndicator.textContent = `Mostrando: Cubo ${cubos[cuboActualIndex].color}`;
+            statusIndicator.textContent = `Mostrando: ${imagenes[imagenActualIndex].nombre}`;
         }
         
         // Detectar cuando se encuentra el marcador
         marker.addEventListener('markerFound', () => {
-            statusIndicator.textContent = `Marcador detectado - Cubo ${cubos[cuboActualIndex].color}`;
+            statusIndicator.textContent = `Marcador detectado - ${imagenes[imagenActualIndex].nombre}`;
         });
         
         // Detectar cuando se pierde el marcador
         marker.addEventListener('markerLost', () => {
-            statusIndicator.textContent = `Buscando marcador... (Cubo ${cubos[cuboActualIndex].color})`;
+            statusIndicator.textContent = `Buscando marcador... (${imagenes[imagenActualIndex].nombre})`;
         });
         
         // Asignar eventos a los botones
-        cubo1Button.addEventListener('click', () => cambiarACubo(0));
-        cubo2Button.addEventListener('click', () => cambiarACubo(1));
+        imagen1Button.addEventListener('click', () => cambiarAImagen(0));
+        imagen2Button.addEventListener('click', () => cambiarAImagen(1));
         
         // Adaptación dinámica al tamaño de pantalla
         function ajustarInterfaz() {
@@ -160,8 +166,8 @@
         
         // Inicializar
         document.addEventListener('DOMContentLoaded', () => {
-            // Empezar con el primer cubo
-            cambiarACubo(0);
+            // Empezar con la primera imagen
+            cambiarAImagen(0);
             // Ajustar interfaz según el tamaño de pantalla
             ajustarInterfaz();
         });
