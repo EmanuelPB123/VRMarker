@@ -2,20 +2,41 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Sistema AR - Dos Escenas</title>
+    <title>Sistema AR Simple - Cambio de Cubos</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
     <style>
         body {
             margin: 0;
             overflow: hidden;
-            position: fixed;
             width: 100%;
             height: 100%;
         }
+        .button-container {
+            position: fixed;
+            bottom: 20px;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            z-index: 999;
+        }
+        .scene-button {
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            border: 2px solid white;
+            padding: 10px 15px;
+            font-size: 18px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .active-button {
+            background: rgba(76, 175, 80, 0.8);
+        }
         .status-indicator {
             position: fixed;
-            bottom: 10px;
+            top: 10px;
             left: 10px;
             background: rgba(0, 0, 0, 0.7);
             color: white;
@@ -23,147 +44,88 @@
             border-radius: 5px;
             z-index: 999;
             font-family: Arial, sans-serif;
-            font-size: 14px;
-        }
-        .button-container {
-            position: fixed;
-            bottom: 10px;
-            right: 10px;
-            display: flex;
-            gap: 10px;
-            z-index: 999;
-        }
-        .scene-button {
-            background: #4CAF50;
-            color: white;
-            border: none;
-            padding: 10px 15px;
             font-size: 16px;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        .active-button {
-            background: #2E7D32;
-            box-shadow: 0 0 10px rgba(255,255,255,0.5);
-        }
-        .scene-indicator {
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            background: rgba(0, 0, 0, 0.7);
-            color: white;
-            padding: 5px 10px;
-            border-radius: 5px;
-            z-index: 999;
-            font-family: Arial, sans-serif;
-            font-size: 14px;
         }
     </style>
 </head>
 <body>
     <!-- Indicador de estado -->
-    <div id="statusIndicator" class="status-indicator">Esperando cámara...</div>
+    <div id="statusIndicator" class="status-indicator">Buscando marcador...</div>
     
     <!-- Botones para cambiar escenas -->
     <div class="button-container">
-        <button id="escena1Button" class="scene-button active-button">Escena 1</button>
-        <button id="escena2Button" class="scene-button">Escena 2</button>
+        <button id="cubo1Button" class="scene-button active-button">Cubo Rojo</button>
+        <button id="cubo2Button" class="scene-button">Cubo Azul</button>
     </div>
     
-    <!-- Indicador de escena actual -->
-    <div id="sceneIndicator" class="scene-indicator">Escena 1: Cubo Rojo</div>
-    
-    <!-- Contenedor para las escenas -->
-    <div id="sceneContainer">
-        <!-- Primera escena -->
-        <a-scene id="escena1" embedded arjs="sourceType: webcam; debugUIEnabled: false;" vr-mode-ui="enabled: false">
-            <a-marker id="marcador1" type="pattern" url="zona1.patt" emitevents="true">
-                <a-box position="0 0.5 0" material="color: red; opacity: 0.8" scale="1 1 1"></a-box>
-            </a-marker>
-            <a-entity camera></a-entity>
-        </a-scene>
+    <!-- Una sola escena A-Frame -->
+    <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix;" vr-mode-ui="enabled: false" renderer="logarithmicDepthBuffer: true;">
         
-        <!-- Segunda escena (inicialmente oculta) -->
-        <a-scene id="escena2" embedded arjs="sourceType: webcam; debugUIEnabled: false;" vr-mode-ui="enabled: false" style="display: none;">
-            <a-marker id="marcador2" type="pattern" url="zona1.patt" emitevents="true">
-                <a-box position="0 0.5 0" material="color: blue; opacity: 0.8" scale="1 1 1"></a-box>
-            </a-marker>
-            <a-entity camera></a-entity>
-        </a-scene>
-    </div>
+        <!-- Un solo marcador con múltiples cubos -->
+        <a-marker id="miMarcador" type="pattern" url="zona1.patt" raycaster="objects: .clickable" emitevents="true">
+            <!-- Cubo 1: Rojo -->
+            <a-box id="cubo1" position="0 0.5 0" rotation="0 0 0" scale="1 1 1" material="color: red; opacity: 0.8" visible="true"></a-box>
+            
+            <!-- Cubo 2: Azul -->
+            <a-box id="cubo2" position="0 0.5 0" rotation="0 0 0" scale="1 1 1" material="color: blue; opacity: 0.8" visible="false"></a-box>
+        </a-marker>
+        
+        <!-- Cámara con cursor -->
+        <a-entity camera></a-entity>
+    </a-scene>
     
     <script>
         // Referencias a elementos DOM
         const statusIndicator = document.getElementById('statusIndicator');
-        const escena1Button = document.getElementById('escena1Button');
-        const escena2Button = document.getElementById('escena2Button');
-        const sceneIndicator = document.getElementById('sceneIndicator');
-        const escena1 = document.getElementById('escena1');
-        const escena2 = document.getElementById('escena2');
-        const marcador1 = document.getElementById('marcador1');
-        const marcador2 = document.getElementById('marcador2');
+        const marker = document.getElementById('miMarcador');
+        const cubo1Button = document.getElementById('cubo1Button');
+        const cubo2Button = document.getElementById('cubo2Button');
+        const cubo1 = document.getElementById('cubo1');
+        const cubo2 = document.getElementById('cubo2');
         
-        // Configuración de escenas
-        const escenas = [
-            { element: escena1, button: escena1Button, marker: marcador1, color: 'Rojo', nombre: 'Escena 1' },
-            { element: escena2, button: escena2Button, marker: marcador2, color: 'Azul', nombre: 'Escena 2' }
+        // Configuración de cubos
+        const cubos = [
+            { element: cubo1, button: cubo1Button, color: 'Rojo' },
+            { element: cubo2, button: cubo2Button, color: 'Azul' }
         ];
         
-        let escenaActualIndex = 0;
+        let cuboActualIndex = 0;
         
-        // Función para cambiar a una escena específica
-        function cambiarAEscena(index) {
-            // Ocultar todas las escenas
-            escenas.forEach((escena, i) => {
-                escena.element.style.display = 'none';
-                escena.button.classList.remove('active-button');
+        // Función para cambiar entre cubos
+        function cambiarACubo(index) {
+            // Ocultar todos los cubos
+            cubos.forEach((cubo, i) => {
+                cubo.element.setAttribute('visible', 'false');
+                cubo.button.classList.remove('active-button');
             });
             
-            // Mostrar la escena seleccionada
-            escenaActualIndex = index;
-            escenas[escenaActualIndex].element.style.display = 'block';
-            escenas[escenaActualIndex].button.classList.add('active-button');
+            // Mostrar el cubo seleccionado
+            cuboActualIndex = index;
+            cubos[cuboActualIndex].element.setAttribute('visible', 'true');
+            cubos[cuboActualIndex].button.classList.add('active-button');
             
-            // Actualizar el indicador de escena
-            sceneIndicator.textContent = `${escenas[escenaActualIndex].nombre}: Cubo ${escenas[escenaActualIndex].color}`;
-            
-            // Reiniciar el estado del marcador
-            statusIndicator.textContent = 'Cámara activa - Buscando marcador...';
+            // Actualizar el indicador
+            statusIndicator.textContent = `Mostrando: Cubo ${cubos[cuboActualIndex].color}`;
         }
         
-        // Configurar eventos de detección de marcadores
-        marcador1.addEventListener('markerFound', () => {
-            if (escenaActualIndex === 0) {
-                statusIndicator.textContent = '¡MARCADOR DETECTADO EN ESCENA 1!';
-            }
+        // Detectar cuando se encuentra el marcador
+        marker.addEventListener('markerFound', () => {
+            statusIndicator.textContent = `Marcador detectado - Cubo ${cubos[cuboActualIndex].color}`;
         });
         
-        marcador2.addEventListener('markerFound', () => {
-            if (escenaActualIndex === 1) {
-                statusIndicator.textContent = '¡MARCADOR DETECTADO EN ESCENA 2!';
-            }
-        });
-        
-        marcador1.addEventListener('markerLost', () => {
-            if (escenaActualIndex === 0) {
-                statusIndicator.textContent = 'Marcador perdido - Buscando...';
-            }
-        });
-        
-        marcador2.addEventListener('markerLost', () => {
-            if (escenaActualIndex === 1) {
-                statusIndicator.textContent = 'Marcador perdido - Buscando...';
-            }
+        // Detectar cuando se pierde el marcador
+        marker.addEventListener('markerLost', () => {
+            statusIndicator.textContent = `Buscando marcador... (Cubo ${cubos[cuboActualIndex].color})`;
         });
         
         // Asignar eventos a los botones
-        escena1Button.addEventListener('click', () => cambiarAEscena(0));
-        escena2Button.addEventListener('click', () => cambiarAEscena(1));
+        cubo1Button.addEventListener('click', () => cambiarACubo(0));
+        cubo2Button.addEventListener('click', () => cambiarACubo(1));
         
-        // Actualizar cuando las escenas estén listas
+        // Inicializar
         document.addEventListener('DOMContentLoaded', () => {
-            // Iniciar con la primera escena
-            cambiarAEscena(0);
+            // Empezar con el primer cubo
+            cambiarACubo(0);
         });
     </script>
 </body>
