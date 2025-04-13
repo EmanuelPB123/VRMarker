@@ -6,31 +6,41 @@
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
     <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            position: fixed;
+            width: 100%;
+            height: 100%;
+        }
         .status-indicator {
             position: fixed;
-            top: 10px;
+            bottom: 10px;
             left: 10px;
             background: rgba(0, 0, 0, 0.7);
             color: white;
-            padding: 10px;
+            padding: 5px 10px;
             border-radius: 5px;
             z-index: 999;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
         }
     </style>
 </head>
-<body style="margin: 0; overflow: hidden;">
-    <!-- Indicador de estado simple -->
-    <div id="statusIndicator" class="status-indicator">Buscando marcador...</div>
+<body>
+    <!-- Indicador de estado movido a la parte inferior para no obstruir la vista -->
+    <div id="statusIndicator" class="status-indicator">Esperando cámara...</div>
     
     <!-- Escena A-Frame simplificada -->
-    <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;" vr-mode-ui="enabled: false">
+    <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix;" vr-mode-ui="enabled: false">
         
         <!-- Un solo marcador -->
-        <a-marker id="miMarcador" type="pattern" url="zona1.patt">
+        <a-marker id="miMarcador" type="pattern" url="markers/patron.patt" emitevents="true">
             <!-- Un cubo simple -->
-            <a-box position="0 0.5 0" material="color: #3498db; opacity: 0.7" scale="1 1 1"></a-box>
+            <a-box position="0 0.5 0" material="color: red; opacity: 0.8" scale="1 1 1"></a-box>
         </a-marker>
         
+        <!-- Cámara con mirada -->
         <a-entity camera></a-entity>
     </a-scene>
     
@@ -39,14 +49,21 @@
         const statusIndicator = document.getElementById('statusIndicator');
         const marker = document.getElementById('miMarcador');
         
+        // Actualizar cuando la cámara esté lista
+        document.querySelector('a-scene').addEventListener('loaded', () => {
+            statusIndicator.textContent = 'Cámara activa - Buscando marcador...';
+        });
+        
         // Detectar cuando se encuentra el marcador
         marker.addEventListener('markerFound', () => {
-            statusIndicator.textContent = 'Marcador detectado';
+            statusIndicator.textContent = '¡MARCADOR DETECTADO!';
+            console.log('Marcador encontrado');
         });
         
         // Detectar cuando se pierde el marcador
         marker.addEventListener('markerLost', () => {
-            statusIndicator.textContent = 'Buscando marcador...';
+            statusIndicator.textContent = 'Marcador perdido - Buscando...';
+            console.log('Marcador perdido');
         });
     </script>
 </body>
