@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Sistema AR - Cambio de Escenas</title>
+    <title>Sistema AR - Dos Escenas</title>
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
     <style>
@@ -25,18 +25,26 @@
             font-family: Arial, sans-serif;
             font-size: 14px;
         }
-        .scene-button {
+        .button-container {
             position: fixed;
             bottom: 10px;
             right: 10px;
+            display: flex;
+            gap: 10px;
+            z-index: 999;
+        }
+        .scene-button {
             background: #4CAF50;
             color: white;
             border: none;
-            padding: 10px 20px;
+            padding: 10px 15px;
             font-size: 16px;
             border-radius: 5px;
             cursor: pointer;
-            z-index: 999;
+        }
+        .active-button {
+            background: #2E7D32;
+            box-shadow: 0 0 10px rgba(255,255,255,0.5);
         }
         .scene-indicator {
             position: fixed;
@@ -56,79 +64,107 @@
     <!-- Indicador de estado -->
     <div id="statusIndicator" class="status-indicator">Esperando cámara...</div>
     
-    <!-- Botón para cambiar de escena -->
-    <button id="sceneButton" class="scene-button">Cambiar Escena</button>
+    <!-- Botones para cambiar escenas -->
+    <div class="button-container">
+        <button id="escena1Button" class="scene-button active-button">Escena 1</button>
+        <button id="escena2Button" class="scene-button">Escena 2</button>
+    </div>
     
     <!-- Indicador de escena actual -->
     <div id="sceneIndicator" class="scene-indicator">Escena 1: Cubo Rojo</div>
     
-    <!-- Escena A-Frame -->
-    <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix;" vr-mode-ui="enabled: false">
+    <!-- Contenedor para las escenas -->
+    <div id="sceneContainer">
+        <!-- Primera escena -->
+        <a-scene id="escena1" embedded arjs="sourceType: webcam; debugUIEnabled: false;" vr-mode-ui="enabled: false">
+            <a-marker id="marcador1" type="pattern" url="markers/patron.patt" emitevents="true">
+                <a-box position="0 0.5 0" material="color: red; opacity: 0.8" scale="1 1 1"></a-box>
+            </a-marker>
+            <a-entity camera></a-entity>
+        </a-scene>
         
-        <!-- Marcador común para todas las escenas -->
-        <a-marker id="miMarcador" type="pattern" url="zona1.patt" emitevents="true">
-            <!-- Cubos de diferentes colores para diferentes escenas -->
-            <a-box id="cuboEscena1" position="0 0.5 0" material="color: red; opacity: 0.8" scale="1 1 1" visible="true"></a-box>
-            <a-box id="cuboEscena2" position="0 0.5 0" material="color: blue; opacity: 0.8" scale="1 1 1" visible="false"></a-box>
-            <a-box id="cuboEscena3" position="0 0.5 0" material="color: green; opacity: 0.8" scale="1 1 1" visible="false"></a-box>
-            <a-box id="cuboEscena4" position="0 0.5 0" material="color: yellow; opacity: 0.8" scale="1 1 1" visible="false"></a-box>
-        </a-marker>
-        
-        <!-- Cámara -->
-        <a-entity camera></a-entity>
-    </a-scene>
+        <!-- Segunda escena (inicialmente oculta) -->
+        <a-scene id="escena2" embedded arjs="sourceType: webcam; debugUIEnabled: false;" vr-mode-ui="enabled: false" style="display: none;">
+            <a-marker id="marcador2" type="pattern" url="markers/patron.patt" emitevents="true">
+                <a-box position="0 0.5 0" material="color: blue; opacity: 0.8" scale="1 1 1"></a-box>
+            </a-marker>
+            <a-entity camera></a-entity>
+        </a-scene>
+    </div>
     
     <script>
         // Referencias a elementos DOM
         const statusIndicator = document.getElementById('statusIndicator');
-        const marker = document.getElementById('miMarcador');
-        const sceneButton = document.getElementById('sceneButton');
+        const escena1Button = document.getElementById('escena1Button');
+        const escena2Button = document.getElementById('escena2Button');
         const sceneIndicator = document.getElementById('sceneIndicator');
+        const escena1 = document.getElementById('escena1');
+        const escena2 = document.getElementById('escena2');
+        const marcador1 = document.getElementById('marcador1');
+        const marcador2 = document.getElementById('marcador2');
         
         // Configuración de escenas
         const escenas = [
-            { id: 'cuboEscena1', color: 'Rojo', nombre: 'Escena 1' },
-            { id: 'cuboEscena2', color: 'Azul', nombre: 'Escena 2' },
-            { id: 'cuboEscena3', color: 'Verde', nombre: 'Escena 3' },
-            { id: 'cuboEscena4', color: 'Amarillo', nombre: 'Escena 4' }
+            { element: escena1, button: escena1Button, marker: marcador1, color: 'Rojo', nombre: 'Escena 1' },
+            { element: escena2, button: escena2Button, marker: marcador2, color: 'Azul', nombre: 'Escena 2' }
         ];
         
-        let escenaActual = 0;
+        let escenaActualIndex = 0;
         
-        // Actualizar cuando la cámara esté lista
-        document.querySelector('a-scene').addEventListener('loaded', () => {
-            statusIndicator.textContent = 'Cámara activa - Buscando marcador...';
-        });
-        
-        // Detectar cuando se encuentra el marcador
-        marker.addEventListener('markerFound', () => {
-            statusIndicator.textContent = '¡MARCADOR DETECTADO!';
-        });
-        
-        // Detectar cuando se pierde el marcador
-        marker.addEventListener('markerLost', () => {
-            statusIndicator.textContent = 'Marcador perdido - Buscando...';
-        });
-        
-        // Función para cambiar de escena
-        function cambiarEscena() {
-            // Ocultar todos los cubos
-            escenas.forEach(escena => {
-                document.getElementById(escena.id).setAttribute('visible', 'false');
+        // Función para cambiar a una escena específica
+        function cambiarAEscena(index) {
+            // Ocultar todas las escenas
+            escenas.forEach((escena, i) => {
+                escena.element.style.display = 'none';
+                escena.button.classList.remove('active-button');
             });
             
-            // Avanzar a la siguiente escena
-            escenaActual = (escenaActual + 1) % escenas.length;
-            
-            // Mostrar el cubo de la escena actual
-            document.getElementById(escenas[escenaActual].id).setAttribute('visible', 'true');
+            // Mostrar la escena seleccionada
+            escenaActualIndex = index;
+            escenas[escenaActualIndex].element.style.display = 'block';
+            escenas[escenaActualIndex].button.classList.add('active-button');
             
             // Actualizar el indicador de escena
-            sceneIndicator.textContent = `${escenas[escenaActual].nombre}: Cubo ${escenas[escenaActual].color}`;
+            sceneIndicator.textContent = `${escenas[escenaActualIndex].nombre}: Cubo ${escenas[escenaActualIndex].color}`;
+            
+            // Reiniciar el estado del marcador
+            statusIndicator.textContent = 'Cámara activa - Buscando marcador...';
         }
         
-        // Asignar el evento al botón
-        sceneButton.addEventListener('click', cambiarEscena);
+        // Configurar eventos de detección de marcadores
+        marcador1.addEventListener('markerFound', () => {
+            if (escenaActualIndex === 0) {
+                statusIndicator.textContent = '¡MARCADOR DETECTADO EN ESCENA 1!';
+            }
+        });
+        
+        marcador2.addEventListener('markerFound', () => {
+            if (escenaActualIndex === 1) {
+                statusIndicator.textContent = '¡MARCADOR DETECTADO EN ESCENA 2!';
+            }
+        });
+        
+        marcador1.addEventListener('markerLost', () => {
+            if (escenaActualIndex === 0) {
+                statusIndicator.textContent = 'Marcador perdido - Buscando...';
+            }
+        });
+        
+        marcador2.addEventListener('markerLost', () => {
+            if (escenaActualIndex === 1) {
+                statusIndicator.textContent = 'Marcador perdido - Buscando...';
+            }
+        });
+        
+        // Asignar eventos a los botones
+        escena1Button.addEventListener('click', () => cambiarAEscena(0));
+        escena2Button.addEventListener('click', () => cambiarAEscena(1));
+        
+        // Actualizar cuando las escenas estén listas
+        document.addEventListener('DOMContentLoaded', () => {
+            // Iniciar con la primera escena
+            cambiarAEscena(0);
+        });
     </script>
 </body>
 </html>
